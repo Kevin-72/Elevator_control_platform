@@ -1,0 +1,270 @@
+C51 COMPILER V9.01   MAIN                                                                  04/24/2024 19:34:02 PAGE 1   
+
+
+C51 COMPILER V9.01, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN main.OBJ
+COMPILER INVOKED BY: D:\Keil\C51\BIN\C51.EXE main.c BROWSE DEBUG OBJECTEXTEND
+
+line level    source
+
+   1          #include <reg51.h>
+   2          #include <string.h>  // 引入字符串操作函数
+   3          
+   4          typedef void(*pFunc)();
+   5          pFunc func=NULL;
+   6          
+   7          #define BUFFER_SIZE 100
+   8          
+   9          char buffer[BUFFER_SIZE]; // 接收缓冲区
+  10          unsigned char buffer_index = 0;  // 缓冲区索引
+  11          int stopFlag = 1;
+  12          sbit RS485E=P3^7;   //定义485的使能脚
+  13          //bit SendFlag;
+  14          //unsigned int ReData,SenData;
+  15          
+  16          
+  17          void Delay10ms(unsigned int c)   //误差 0us
+  18          {
+  19   1          unsigned char a, b;
+  20   1      
+  21   1              //--c已经在传递过来的时候已经赋值了，所以在for语句第一句就不用赋值了--//
+  22   1          for (;c>0;c--)
+  23   1              {
+  24   2                      for (b=38;b>0;b--)
+  25   2                      {
+  26   3                              for (a=130;a>0;a--);
+  27   3                      }         
+  28   2              }
+  29   1      }
+  30          
+  31          /* 串口初始化函数 */
+  32          void SerialInit(void) {
+  33   1          TMOD = 0x20;      // 定时器1模式2，8位自动重装载
+  34   1          TH1 = 0xFD;       // 波特率9600, Fosc=11.0592MHz
+  35   1          SCON = 0x50;      // 模式1, 串口允许接收
+  36   1          TR1 = 1;          // 启动定时器1
+  37   1          TI = 0;           // 清除发送标志
+  38   1          RI = 0;           // 清除接收标志
+  39   1          ES = 1;           // 使能串口中断
+  40   1          EA = 1;           // 全局中断使能
+  41   1      }
+  42          
+  43          
+  44          void up()
+  45          {
+  46   1              stopFlag = 0;
+  47   1              while(1)        
+  48   1              {
+  49   2                      P0 = 0xff;
+  50   2                      
+  51   2                      if(stopFlag)
+  52   2                      {
+  53   3                              break;
+  54   3                      }
+  55   2              }
+C51 COMPILER V9.01   MAIN                                                                  04/24/2024 19:34:02 PAGE 2   
+
+  56   1      }
+  57          
+  58          void down()
+  59          {
+  60   1              stopFlag = 0;
+  61   1              while(1)        
+  62   1              {
+  63   2                      P0 = 0x55;
+  64   2                      
+  65   2                      if(stopFlag)
+  66   2                      {
+  67   3                              break;
+  68   3                      }
+  69   2              }
+  70   1      }
+  71          
+  72          void stop()
+  73          {
+  74   1              stopFlag = 0;
+  75   1              while(1)
+  76   1              {
+  77   2                      P0 = 0;
+  78   2                      if(stopFlag)
+  79   2                      {
+  80   3                              break;
+  81   3                      }
+  82   2              }
+  83   1      }
+  84          
+  85          void mode01()
+  86          {
+  87   1              unsigned char LED = ~1;
+  88   1              stopFlag = 0;
+  89   1              while(1)        
+  90   1              {
+  91   2                      P0 = LED;
+  92   2                      LED = LED << 1;
+  93   2                      if (LED == 0)
+  94   2                      {
+  95   3                              LED = ~1;       
+  96   3                      }       
+  97   2                      Delay10ms(50);
+  98   2                      
+  99   2                      if(stopFlag)
+ 100   2                      {
+ 101   3                              break;
+ 102   3                      }
+ 103   2              }
+ 104   1      }
+ 105          
+ 106          void mode02()
+ 107          {
+ 108   1              unsigned char LED = 1;
+ 109   1              stopFlag = 0;
+ 110   1              while(1)        
+ 111   1              {
+ 112   2                      P0 = LED;
+ 113   2                      LED = LED << 1;
+ 114   2                      if (LED == 0)
+ 115   2                      {
+ 116   3                              LED = 1;        
+ 117   3                      }       
+C51 COMPILER V9.01   MAIN                                                                  04/24/2024 19:34:02 PAGE 3   
+
+ 118   2                      Delay10ms(50);
+ 119   2                      
+ 120   2                      if(stopFlag)
+ 121   2                      {
+ 122   3                              break;
+ 123   3                      }
+ 124   2              }
+ 125   1      }
+ 126          
+ 127          void mode03()
+ 128          {
+ 129   1              unsigned char LED = 0xf;
+ 130   1              stopFlag = 0;
+ 131   1              while(1)        
+ 132   1              {
+ 133   2                      P0 = LED;
+ 134   2                      LED = ~LED;     
+ 135   2                      Delay10ms(50);
+ 136   2                      
+ 137   2                      if(stopFlag)
+ 138   2                      {
+ 139   3                              break;
+ 140   3                      }
+ 141   2              }
+ 142   1      }
+ 143          
+ 144          void mode04()
+ 145          {
+ 146   1              unsigned char LED = 0x55;
+ 147   1              stopFlag = 0;
+ 148   1              while(1)        
+ 149   1              {
+ 150   2                      P0 = LED;
+ 151   2                      LED = ~LED;     
+ 152   2                      Delay10ms(50);
+ 153   2                      
+ 154   2                      if(stopFlag)
+ 155   2                      {
+ 156   3                              break;
+ 157   3                      }
+ 158   2              }
+ 159   1      }
+ 160          
+ 161          void mode05()
+ 162          {
+ 163   1              unsigned char LED = 0x33;
+ 164   1              stopFlag = 0;
+ 165   1              while(1)        
+ 166   1              {
+ 167   2                      P0 = LED;
+ 168   2                      LED = ~LED;     
+ 169   2                      Delay10ms(50);
+ 170   2                      
+ 171   2                      if(stopFlag)
+ 172   2                      {
+ 173   3                              break;
+ 174   3                      }
+ 175   2              }
+ 176   1      }
+ 177          
+ 178          /* 处理接收到的命令 */
+ 179          void ProcessCommand(char *cmd) {
+C51 COMPILER V9.01   MAIN                                                                  04/24/2024 19:34:02 PAGE 4   
+
+ 180   1              stopFlag = 1;
+ 181   1      
+ 182   1          if (strcmp(cmd, "CMD=UP\r\n") == 0) {
+ 183   2              func=up;
+ 184   2          } else if (strcmp(cmd, "CMD=DOWN\r\n") == 0) {
+ 185   2              func=down;
+ 186   2              } else if (strcmp(cmd, "CMD=STOP\r\n") == 0) {
+ 187   2                      func=stop;
+ 188   2              } else if (strcmp(cmd, "MODE=01\r\n") == 0) {
+ 189   2                      func = mode01;
+ 190   2              } else if (strcmp(cmd, "MODE=02\r\n") == 0) {
+ 191   2                      func = mode02;
+ 192   2              } else if (strcmp(cmd, "MODE=03\r\n") == 0) {
+ 193   2                      func = mode03;
+ 194   2              } else if (strcmp(cmd, "MODE=04\r\n") == 0) {
+ 195   2                      func = mode04;
+ 196   2              } else if (strcmp(cmd, "MODE=05\r\n") == 0) {
+ 197   2                      func = mode05;
+ 198   2          }
+ 199   1      
+ 200   1      
+ 201   1          memset(buffer, 0, BUFFER_SIZE);  // 清空缓冲区
+ 202   1      }
+ 203          
+ 204          /* 串口发送字符函数 */
+ 205          void SerialSend(char dat) {
+ 206   1          SBUF = dat;       // 将数据放到串口缓冲寄存器
+ 207   1          while (!TI);      // 等待发送完成
+ 208   1          TI = 0;           // 清除发送完成标志
+ 209   1      }
+ 210          
+ 211          /* 串口中断服务例程 */
+ 212          void Serial_ISR(void) interrupt 4 {
+ 213   1          if (RI) {
+ 214   2              char received_char = SBUF;
+ 215   2              RI = 0;  // 清除接收中断标志
+ 216   2              buffer[buffer_index++] = received_char;  // 存储接收到的字符
+ 217   2              if (received_char == '\n' && buffer_index > 1 && buffer[buffer_index-2] == '\r') {
+ 218   3                  buffer[buffer_index] = '\0';  // 确保字符串结束
+ 219   3                  ProcessCommand(buffer);  // 处理接收到的命令
+ 220   3                  buffer_index = 0;  // 重置缓冲区索引
+ 221   3              }
+ 222   2              if (buffer_index >= BUFFER_SIZE - 1) {
+ 223   3                  buffer_index = 0;  // 防止缓冲区溢出
+ 224   3              }
+ 225   2          }
+ 226   1      }
+ 227          
+ 228          /* 主函数 */
+ 229          int main(void) {
+ 230   1          SerialInit();  // 初始化串口
+ 231   1              RS485E=0; 
+ 232   1      
+ 233   1              func = stop;
+ 234   1          while (1) {
+ 235   2              func();
+ 236   2                      //P0 = 0xF2;
+ 237   2                      //Delay10ms(100);
+ 238   2          }
+ 239   1      }
+
+
+C51 COMPILER V9.01   MAIN                                                                  04/24/2024 19:34:02 PAGE 5   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    620    ----
+   CONSTANT SIZE    =     81    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =    106       4
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
