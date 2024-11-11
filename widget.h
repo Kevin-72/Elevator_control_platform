@@ -12,6 +12,9 @@
 
 #include <cstdint>
 #include <iomanip>
+#include <iostream>
+
+using namespace std;
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class Widget; }
@@ -30,7 +33,7 @@ public:
 private slots:
 
 
-    void on_openBt_clicked();
+    void on_openSerialBt_clicked();
 
     void on_btnSerialCheck_clicked();
 
@@ -81,7 +84,7 @@ enum CommandType {
 
 // 协议帧结构体
 class ProtocolFrame {
-private:
+public:
     uint16_t frameHeader;              // 帧头
     uint8_t version;                   // 版本号
     uint8_t command;                   // 指令
@@ -92,7 +95,7 @@ private:
     // 计算校验和（私有函数）
     uint8_t calculateChecksum(const std::vector<uint8_t>& data) const;
 
-public:
+
     // 构造函数
     ProtocolFrame(uint8_t cmd, const std::vector<uint8_t>& dataPayload);
 
@@ -105,7 +108,7 @@ public:
 
 
 // 心跳检测构造
-ProtocolFrame createHeartbeatFrame(bool initial = true);
+ProtocolFrame createHeartbeatFrame(bool initial);
 
 // 查询状态构造
 ProtocolFrame createQueryStatusFrame();
@@ -117,7 +120,7 @@ ProtocolFrame createDeviceControlFrame(uint8_t deviceId, uint8_t commandValue);
 void sendFrame(const ProtocolFrame& frame);
 
 // 接收并解析多个下位机响应
-void receiveFrames(const std::vector<uint8_t>& rawData);
+void receiveFrames(std::vector<uint8_t>& buffer);
 
 
 
