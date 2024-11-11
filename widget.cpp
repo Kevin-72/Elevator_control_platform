@@ -125,11 +125,11 @@ void Widget::on_upBt_pressed()
     serialPort->write("CMD=UP\r\n");
     appendLog("持续上升中......");
 }
-void Widget::on_upBt_released()
-{
-    serialPort->write("CMD=STOP\r\n");
-    appendLog("持续上升停止");
-}
+// void Widget::on_upBt_released()
+// {
+//     serialPort->write("CMD=STOP\r\n");
+//     appendLog("持续上升停止");
+// }
 
 
 void Widget::on_downBt_pressed()
@@ -137,11 +137,11 @@ void Widget::on_downBt_pressed()
     serialPort->write("CMD=DOWN\r\n");
     appendLog("持续下降中......");
 }
-void Widget::on_downBt_released()
-{
-    serialPort->write("CMD=STOP\r\n");
-    appendLog("持续下降停止");
-}
+// void Widget::on_downBt_released()
+// {
+//     serialPort->write("CMD=STOP\r\n");
+//     appendLog("持续下降停止");
+// }
 
 
 
@@ -204,3 +204,175 @@ void Widget::on_sendCb_clicked()
 
 }
 
+
+
+
+// 构造函数实现
+ProtocolFrame::ProtocolFrame(uint8_t cmd, const std::vector<uint8_t>& dataPayload)
+    : frameHeader(FRAME_HEADER), version(VERSION), command(cmd), dataLength(dataPayload.size()), data(dataPayload) {
+    checksum = calculateChecksum(serialize(false)); // 计算校验和
+}
+
+// 序列化函数实现
+std::vector<uint8_t> ProtocolFrame::serialize(bool withChecksum) const {
+    std::vector<uint8_t> frame;
+    frame.push_back((frameHeader >> 8) & 0xFF); // 帧头的高字节
+    frame.push_back(frameHeader & 0xFF);         // 帧头的低字节
+    frame.push_back(version);                    // 版本号
+    frame.push_back(command);                    // 命令
+    frame.push_back((dataLength >> 8) & 0xFF);   // 数据长度的高字节
+    frame.push_back(dataLength & 0xFF);          // 数据长度的低字节
+    frame.insert(frame.end(), data.begin(), data.end()); // 插入数据
+    if (withChecksum) {
+        frame.push_back(checksum);               // 插入校验和
+    }
+    return frame;
+}
+
+// 反序列化字节流，解析响应
+static ProtocolFrame deserialize(const std::vector<uint8_t>& rawData) {
+    if (rawData.size() < 7) {
+        throw std::invalid_argument("Invalid frame size");
+    }
+
+    uint16_t frameHeader = (rawData[0] << 8) | rawData[1];
+    uint8_t version = rawData[2];
+    uint8_t command = rawData[3];
+    uint16_t dataLength = (rawData[4] << 8) | rawData[5];
+    std::vector<uint8_t> data(rawData.begin() + 6, rawData.begin() + 6 + dataLength);
+    uint8_t checksum = rawData[6 + dataLength];
+
+    ProtocolFrame frame(command, data);
+    frame.frameHeader = frameHeader;
+    frame.version = version;
+    frame.dataLength = dataLength;
+    frame.checksum = checksum;
+
+    return frame;
+}
+
+// 计算校验和函数实现
+uint8_t ProtocolFrame::calculateChecksum(const std::vector<uint8_t>& data) const {
+    uint8_t checksum = 0x00;
+    for (auto byte : data) {
+        checksum += byte;
+    }
+    return ~checksum + 1;  // 计算补码
+}
+
+
+
+// 心跳检测构造
+ProtocolFrame createHeartbeatFrame(bool initial = true) {
+    std::vector<uint8_t> data = {initial ? 0x00 : 0x01};  // 初始发送0x00，后续0x01
+    return ProtocolFrame(HEARTBEAT, data);
+}
+
+// 查询状态构造
+ProtocolFrame createQueryStatusFrame() {
+    return ProtocolFrame(QUERY_STATUS, {});
+}
+
+// 设备控制构造
+ProtocolFrame createDeviceControlFrame(uint8_t deviceId, uint8_t commandValue) {
+    std::vector<uint8_t> data = {deviceId, commandValue};
+    return ProtocolFrame(DEVICE_CONTROL, data);
+}
+
+// 模拟发送协议帧
+void sendFrame(const ProtocolFrame& frame) {
+    std::vector<uint8_t> serialized = frame.serialize();
+
+    // 显示发送的帧内容
+    std::cout << "Sending Frame: ";
+    for (auto byte : serialized) {
+        std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)byte << " ";
+    }
+    std::cout << std::endl;
+
+    // 模拟接收下位机响应
+    std::vector<uint8_t> responseData = {
+        0x55, 0xAA, 0x00, 0x03, 0x00, 0x01, 0x00,  // 第一帧
+        0x55, 0xAA, 0x00, 0x03, 0x00, 0x02, 0x01,  // 第二帧
+        0x55, 0xAA, 0x00, 0x06, 0x00, 0x01, 0x01, 0x01  // 第三帧
+    };
+    receiveFrames(responseData);
+}
+
+// 接收并解析多个下位机响应
+void receiveFrames(std::vector<uint8_t>& buffer) {
+    while (buffer.size() >= 7) {  // 至少需要7个字节（帧头 + 版本 + 命令 + 数据长度）
+        // 查找帧头
+        size_t headerPos = 0;
+        while (headerPos + 1 < buffer.size() && (buffer[headerPos] != 0x55 || buffer[headerPos + 1] != 0xAA)) {
+            headerPos++;
+        }
+        
+        if (headerPos + 1 >= buffer.size()) {
+            std::cout << "Error: Incomplete or invalid frame, unable to find frame header." << std::endl;
+            break;  // 没有找到有效的帧头，退出处理
+        }
+
+        // 获取数据长度
+        uint16_t dataLength = (buffer[headerPos + 4] << 8) | buffer[headerPos + 5];
+        size_t totalFrameSize = 6 + dataLength + 1;  // 帧头 + 数据 + 校验和
+
+        // 检查缓冲区是否包含完整的一帧
+        if (buffer.size() < headerPos + totalFrameSize) {
+            std::cout << "Waiting for more data to complete the frame." << std::endl;
+            break;  // 数据不完整，等待更多数据
+        }
+
+        // 提取完整帧并解析
+        std::vector<uint8_t> frameData(buffer.begin() + headerPos, buffer.begin() + headerPos + totalFrameSize);
+        try {
+            ProtocolFrame responseFrame = ProtocolFrame::deserialize(frameData);
+
+            // 输出接收到的帧内容
+            std::cout << "Received Frame: ";
+            for (auto byte : frameData) {
+                std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)byte << " ";
+            }
+            std::cout << std::endl;
+
+            // 根据响应的命令字解析并处理
+            switch (responseFrame.command) {
+                case HEARTBEAT:
+                    std::cout << "Received Heartbeat response. Data: ";
+                    for (auto byte : responseFrame.data) {
+                        std::cout << std::hex << (int)byte << " ";
+                    }
+                    std::cout << std::endl;
+                    break;
+                case QUERY_STATUS:
+                    std::cout << "Received Query Status response." << std::endl;
+                    break;
+                case DEVICE_CONTROL:
+                    std::cout << "Received Device Control response." << std::endl;
+                    break;
+                default:
+                    std::cout << "Unknown command in response." << std::endl;
+                    break;
+            }
+
+            // 删除已处理的帧
+            buffer.erase(buffer.begin(), buffer.begin() + headerPos + totalFrameSize);
+        } catch (const std::exception& e) {
+            std::cout << "Error parsing received frame: " << e.what() << std::endl;
+            break;
+        }
+    }
+}
+
+
+// // 发送心跳检测
+// ProtocolFrame heartbeatFrame = createHeartbeatFrame();
+// sendFrame(heartbeatFrame);
+
+// // 发送查询状态请求
+// ProtocolFrame queryStatusFrame = createQueryStatusFrame();
+// sendFrame(queryStatusFrame);
+
+// // 发送设备控制命令（示例: 控制设备开关）
+// ProtocolFrame deviceControlFrame = createDeviceControlFrame(0x14, 0x01);  // 示例: 控制开关
+// sendFrame(deviceControlFrame);
