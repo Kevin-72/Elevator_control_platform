@@ -75,7 +75,7 @@ void scan_serial(Ui::Widget *ui, Widget *wgt)
 }
 
 /*打开串口*/
-void Widget::on_openBt_clicked()
+void Widget::on_openSerialBt_clicked()
 {
     // 初始化串口属性，设置 端口号、波特率、数据位、停止位、奇偶校验位数
     QRegularExpression re("COM\\d+");
@@ -87,9 +87,9 @@ void Widget::on_openBt_clicked()
 
     // 根据初始化好的串口属性，打开串口
     // 如果打开成功，反转打开按钮显示和功能。打开失败，无变化，并且弹出错误对话框。
-    if(ui->openBt->text() == "打开串口"){
+    if(ui->openSerialBt->text() == "打开串口"){
         if(serialPort->open(QIODevice::ReadWrite) == true){
-            ui->openBt->setText("关闭串口");
+            ui->openSerialBt->setText("关闭串口");
             // 让端口号下拉框不可选，避免误操作（选择功能不可用，控件背景为灰色）
 //            ui->serialCb->setEnabled(false);
             setEnabledMy(ui, true);
@@ -100,7 +100,7 @@ void Widget::on_openBt_clicked()
         }
     }else{
         serialPort->close();
-        ui->openBt->setText("打开串口");
+        ui->openSerialBt->setText("打开串口");
         // 端口号下拉框恢复可选，避免误操作
 //        ui->serialCb->setEnabled(true);
         setEnabledMy(ui, false);
@@ -230,7 +230,7 @@ std::vector<uint8_t> ProtocolFrame::serialize(bool withChecksum) const {
 }
 
 // 反序列化字节流，解析响应
-static ProtocolFrame deserialize(const std::vector<uint8_t>& rawData) {
+ProtocolFrame ProtocolFrame::deserialize(const std::vector<uint8_t>& rawData) {
     if (rawData.size() < 7) {
         throw std::invalid_argument("Invalid frame size");
     }
@@ -264,7 +264,7 @@ uint8_t ProtocolFrame::calculateChecksum(const std::vector<uint8_t>& data) const
 
 // 心跳检测构造
 ProtocolFrame createHeartbeatFrame(bool initial = true) {
-    std::vector<uint8_t> data = {initial ? 0x00 : 0x01};  // 初始发送0x00，后续0x01
+    std::vector<uint8_t> data = {static_cast<uint8_t>(initial ? 0x00 : 0x01)};  // 初始发送0x00，后续0x01
     return ProtocolFrame(HEARTBEAT, data);
 }
 
