@@ -122,7 +122,7 @@
     </font>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>30</x>
@@ -168,13 +168,13 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>330</x>
-     <y>10</y>
+     <y>60</y>
      <width>351</width>
-     <height>201</height>
+     <height>151</height>
     </rect>
    </property>
    <layout class="QGridLayout" name="gridLayout_4">
@@ -193,8 +193,38 @@
       </property>
      </widget>
     </item>
-    <item row="0" column="1">
-     <widget class="QLabel" name="label_switch_value">
+    <item row="2" column="1">
+     <widget class="QLabel" name="label_max_channel_value">
+      <property name="font">
+       <font>
+        <family>Times New Roman</family>
+        <pointsize>10</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>None</string>
+      </property>
+     </widget>
+    </item>
+    <item row="3" column="1">
+     <widget class="QLabel" name="label_channel_value">
+      <property name="font">
+       <font>
+        <family>Times New Roman</family>
+        <pointsize>10</pointsize>
+        <weight>75</weight>
+        <bold>true</bold>
+       </font>
+      </property>
+      <property name="text">
+       <string>None</string>
+      </property>
+     </widget>
+    </item>
+    <item row="4" column="1">
+     <widget class="QLabel" name="label_device_value">
       <property name="font">
        <font>
         <family>Times New Roman</family>
@@ -223,8 +253,8 @@
       </property>
      </widget>
     </item>
-    <item row="1" column="1">
-     <widget class="QLabel" name="label_access_value">
+    <item row="4" column="0">
+     <widget class="QLabel" name="label_device">
       <property name="font">
        <font>
         <family>Times New Roman</family>
@@ -234,7 +264,7 @@
        </font>
       </property>
       <property name="text">
-       <string>None</string>
+       <string>设备升降：</string>
       </property>
      </widget>
     </item>
@@ -253,21 +283,6 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="1">
-     <widget class="QLabel" name="label_max_channel_value">
-      <property name="font">
-       <font>
-        <family>Times New Roman</family>
-        <pointsize>10</pointsize>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>None</string>
-      </property>
-     </widget>
-    </item>
     <item row="3" column="0">
      <widget class="QLabel" name="label_channel">
       <property name="font">
@@ -283,8 +298,8 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="1">
-     <widget class="QLabel" name="label_channel_value">
+    <item row="0" column="1">
+     <widget class="QLabel" name="label_switch_value">
       <property name="font">
        <font>
         <family>Times New Roman</family>
@@ -298,23 +313,8 @@
       </property>
      </widget>
     </item>
-    <item row="4" column="0">
-     <widget class="QLabel" name="label_device">
-      <property name="font">
-       <font>
-        <family>Times New Roman</family>
-        <pointsize>10</pointsize>
-        <weight>75</weight>
-        <bold>true</bold>
-       </font>
-      </property>
-      <property name="text">
-       <string>设备升降：</string>
-      </property>
-     </widget>
-    </item>
-    <item row="4" column="1">
-     <widget class="QLabel" name="label_device_value">
+    <item row="1" column="1">
+     <widget class="QLabel" name="label_access_value">
       <property name="font">
        <font>
         <family>Times New Roman</family>
@@ -330,7 +330,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>30</x>
@@ -444,7 +444,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>330</x>
@@ -559,6 +559,26 @@
      </widget>
     </item>
    </layout>
+  </widget>
+  <widget class="QPushButton" name="queryCb">
+   <property name="geometry">
+    <rect>
+     <x>330</x>
+     <y>20</y>
+     <width>351</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>12</pointsize>
+     <weight>75</weight>
+     <bold>true</bold>
+    </font>
+   </property>
+   <property name="text">
+    <string>查询状态</string>
+   </property>
   </widget>
  </widget>
  <resources/>
