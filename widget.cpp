@@ -28,6 +28,11 @@ Widget::Widget(QWidget *parent)
     connect(responseTimeoutTimer, &QTimer::timeout, this, &Widget::onResponseTimeout);
     // 设置响应超时定时器间隔
     responseTimeoutTimer->setSingleShot(true);  // 设置为单次定时器
+
+
+    ui->maxChannelSetCb->setValidator(new QIntValidator(ui->maxChannelSetCb));
+    ui->ChannelSetCb->setValidator(new QIntValidator(ui->ChannelSetCb));
+
 }
 
 Widget::~Widget()
@@ -93,11 +98,11 @@ void Widget::sendFrame(const ProtocolFrame& frame) {
     sendSerialData(byteArrayData);
 
     // 显示发送的帧内容
-    std::cout << "Sending Frame: ";
+    QString logMessage = "Sending Frame: ";
     for (auto byte : serialized) {
-        std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)byte << " ";
+        logMessage += QString("%1 ").arg(byte, 2, 16, QChar('0')).toUpper();  // 将字节格式化为两位十六进制
     }
-    std::cout << std::endl;
+    appendLog(logMessage);
 
     // 模拟接收下位机响应
     std::vector<uint8_t> responseData = {
@@ -240,7 +245,10 @@ void Widget::setEnabledMy(bool flag)
     ui->label_2->setEnabled(!flag);
     ui->label_3->setEnabled(flag);
     ui->label_4->setEnabled(flag);
+    ui->label_5->setEnabled(flag);
 
+    ui->openBt->setEnabled(flag);
+    ui->closeBt->setEnabled(flag);
     ui->upBt->setEnabled(flag);
     ui->downBt->setEnabled(flag);
     ui->stopBt->setEnabled(flag);
@@ -251,7 +259,9 @@ void Widget::setEnabledMy(bool flag)
     ui->mode05Bt->setEnabled(flag);
     ui->channelsCb->setEnabled(flag);
     ui->maxChannelSetCb->setEnabled(flag);
+    ui->ChannelSetCb->setEnabled(flag);
     ui->sendCb->setEnabled(flag);
+    ui->queryCb->setEnabled(flag);
 }
 
 void Widget::startHeartbeatThread()
@@ -272,7 +282,7 @@ void Widget::startHeartbeatThread()
 
 void Widget::sendHeartbeat()
 {
-    ProtocolFrame frame = createHeartbeatFrame(true);  // 创建心跳帧
+    ProtocolFrame frame = createHeartbeatFrame();  // 创建心跳帧
     sendFrame(frame);  // 调用原有的 sendFrame 函数发送心跳帧
     appendLog("发送心跳帧");
 }
@@ -404,17 +414,41 @@ void Widget::on_closeBt_clicked()
     appendLog("发送close");
 }
 
+void Widget::on_queryCb_clicked()
+{
+    ProtocolFrame queryStatusFrame = createQueryStatusFrame();
+    sendFrame(queryStatusFrame);
+    appendLog("查询状态");
+}
+
 void Widget::on_sendCb_clicked()
 {
-    if(!ui->maxChannelSetCb->text().isEmpty())
+    if(!ui->maxChannelSetCb->text().isEmpty() && !ui->ChannelSetCb->text().isEmpty())
     {
-        QString channelInfo = QString("CHANNEL=%1+%2\r\n").arg(ui->channelsCb->currentText(), ui->maxChannelSetCb->text());
-        serialPort->write(channelInfo.toUtf8());
-        appendLog(QString("通道和最大频道设置信息已发送：%1").arg(channelInfo));
+        int maxChannelNumber = ui->maxChannelSetCb->text().toInt();
+        std::vector<uint8_t> maxChannelData(4);
+        maxChannelData[0] = (maxChannelNumber >> 24) & 0xFF;  // 高字节
+        maxChannelData[1] = (maxChannelNumber >> 16) & 0xFF;
+        maxChannelData[2] = (maxChannelNumber >> 8) & 0xFF;
+        maxChannelData[3] = maxChannelNumber & 0xFF;           // 低字节
+
+        int channelNumber = ui->ChannelSetCb->text().toInt();
+        std::vector<uint8_t> channelData(4);
+        channelData[0] = (channelNumber >> 24) & 0xFF;  // 高字节
+        channelData[1] = (channelNumber >> 16) & 0xFF;
+        channelData[2] = (channelNumber >> 8) & 0xFF;
+        channelData[3] = channelNumber & 0xFF;           // 低字节
+
+        if (maxChannelNumber < channelNumber)
+        {
+            QMessageBox::critical(this, "错误提示", "频道设置不能超过最大频道值\r\n请重新设置！！！");
+            appendLog("发送失败，请重新设置！");
+            return;
+        }
     }
     else
     {
-        QMessageBox::critical(this, "错误提示", "最大频道设置不能为空\r\n请重新设置！！！");
+        QMessageBox::critical(this, "错误提示", "最大频道设置与频道不能为空\r\n请重新设置！！！");
         appendLog("发送失败，请重新设置！");
     }
 
@@ -500,14 +534,15 @@ ProtocolFrame ProtocolFrame::deserialize(const std::vector<uint8_t>& rawData) {
 
 
 // 心跳检测构造
-ProtocolFrame createHeartbeatFrame(bool initial = true) {
-    std::vector<uint8_t> data = {static_cast<uint8_t>(initial ? 0x00 : 0x01)};  // 初始发送0x00，后续0x01
+ProtocolFrame createHeartbeatFrame() {
+    std::vector<uint8_t> data = {};  // 初始接收0x00，后续0x01
     return ProtocolFrame(HEARTBEAT, data);
 }
 
 // 查询状态构造
 ProtocolFrame createQueryStatusFrame() {
-    return ProtocolFrame(QUERY_STATUS, {});
+    std::vector<uint8_t> data = {};
+    return ProtocolFrame(QUERY_STATUS, data);
 }
 
 // 设备控制构造
@@ -522,16 +557,16 @@ ProtocolFrame createDeviceControlFrame(uint8_t deviceId, uint8_t commandValue) {
 
 
 // // 发送心跳检测
-// ProtocolFrame heartbeatFrame = createHeartbeatFrame();
-// sendFrame(heartbeatFrame);
 
 // // 发送查询状态请求
-// ProtocolFrame queryStatusFrame = createQueryStatusFrame();
-// sendFrame(queryStatusFrame);
+
 
 // // 发送设备控制命令（示例: 控制设备开关）
 // ProtocolFrame deviceControlFrame = createDeviceControlFrame(0x14, 0x01);  // 示例: 控制开关
 // sendFrame(deviceControlFrame);
+
+
+
 
 
 

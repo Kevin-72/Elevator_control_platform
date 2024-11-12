@@ -21,6 +21,17 @@ using namespace std;
 
 #define  RESPONSETIMEOUTTIMESET  200      // 响应超时时间设置
 
+// 协议字段定义
+const uint16_t FRAME_HEADER = 0x55AA;  // 帧头
+const uint8_t VERSION = 0x00;          // 默认版本
+
+// 消息类型定义
+enum CommandType {
+    HEARTBEAT = 0x00,
+    QUERY_STATUS = 0x08,
+    DEVICE_CONTROL = 0x06
+};
+
 // 协议帧结构体
 class ProtocolFrame {
 public:
@@ -93,11 +104,9 @@ private slots:
     void on_mode05Bt_clicked();
 
     void on_openBt_clicked();
-
     void on_closeBt_clicked();
-
+    void on_queryCb_clicked();
     void on_sendCb_clicked();
-
     void onResponseTimeout();  // 响应超时槽函数
 
 private:
@@ -119,23 +128,14 @@ private:
 
 
 
-// 协议字段定义
-const uint16_t FRAME_HEADER = 0x55AA;  // 帧头
-const uint8_t VERSION = 0x00;          // 默认版本
 
-// 消息类型定义
-enum CommandType {
-    HEARTBEAT = 0x00,
-    QUERY_STATUS = 0x08,
-    DEVICE_CONTROL = 0x06
-};
 
 
 
 
 
 // 心跳检测构造
-ProtocolFrame createHeartbeatFrame(bool initial);
+ProtocolFrame createHeartbeatFrame();
 
 // 查询状态构造
 ProtocolFrame createQueryStatusFrame();
