@@ -104,13 +104,13 @@ void Widget::sendFrame(const ProtocolFrame& frame) {
     }
     appendLog(logMessage);
 
-    // 模拟接收下位机响应
-    std::vector<uint8_t> responseData = {
-        0x55, 0xAA, 0x00, 0x03, 0x00, 0x01, 0x00,  // 第一帧
-        0x55, 0xAA, 0x00, 0x03, 0x00, 0x02, 0x01,  // 第二帧
-        0x55, 0xAA, 0x00, 0x06, 0x00, 0x01, 0x01, 0x01  // 第三帧
-    };
-    receiveFrames(responseData);
+    // // 模拟接收下位机响应
+    // std::vector<uint8_t> responseData = {
+    //     0x55, 0xAA, 0x00, 0x03, 0x00, 0x01, 0x00,  // 第一帧
+    //     0x55, 0xAA, 0x00, 0x03, 0x00, 0x02, 0x01,  // 第二帧
+    //     0x55, 0xAA, 0x00, 0x06, 0x00, 0x01, 0x01, 0x01  // 第三帧
+    // };
+    // receiveFrames(responseData);
 }
 
 // 串口数据读取函数
@@ -355,19 +355,28 @@ void Widget::on_btnSerialCheck_clicked()
 
 void Widget::on_upBt_pressed()
 {
-    serialPort->write("CMD=UP\r\n");
-    appendLog("持续上升中......");
+    // serialPort->write("CMD=UP\r\n");
+    std::vector<uint8_t> data = {DevCtrlValue::DevCtrl_UP};
+    ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
+    sendFrame(dataFrame); 
+    appendLog("上升中......");
 }
 
 void Widget::on_downBt_pressed()
 {
-    serialPort->write("CMD=DOWN\r\n");
-    appendLog("持续下降中......");
+    // serialPort->write("CMD=DOWN\r\n");
+    std::vector<uint8_t> data = {DevCtrlValue::DevCtrl_DOWN};
+    ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
+    sendFrame(dataFrame); 
+    appendLog("下降中......");
 }
 
 void Widget::on_stopBt_clicked()
 {
-    serialPort->write("CMD=STOP\r\n");
+    // serialPort->write("CMD=STOP\r\n");
+    std::vector<uint8_t> data = {DevCtrlValue::DevCtrl_STOP};
+    ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
+    sendFrame(dataFrame); 
     appendLog("停止运行");
 }
 
@@ -404,13 +413,17 @@ void Widget::on_mode05Bt_clicked()
 
 void Widget::on_openBt_clicked()
 {
-    serialPort->write("open\r\n");
+    std::vector<uint8_t> data = {SwitchValue::SWITCH_ON};
+    ProtocolFrame dataFrame = createDeviceControlFrame(DPType::OFF_ON, data);  
+    sendFrame(dataFrame); 
     appendLog("发送open");
 }
 
 void Widget::on_closeBt_clicked()
 {
-    serialPort->write("close\r\n");
+    std::vector<uint8_t> data = {SwitchValue::SWITCH_OFF};
+    ProtocolFrame dataFrame = createDeviceControlFrame(DPType::OFF_ON, data);  
+    sendFrame(dataFrame); 
     appendLog("发送close");
 }
 
@@ -452,6 +465,23 @@ void Widget::on_sendCb_clicked()
         appendLog("发送失败，请重新设置！");
     }
 
+
+    std::vector<uint8_t> accessData;
+    auto it = StringAccessValueMap.find(ui->baundrateCb->currentText().toStdString());
+    if (it != StringAccessValueMap.end()) {
+        accessData.push_back(it->second);
+    } else {
+        QMessageBox::critical(this, "错误提示", "Invalid access channel string.\r\n");
+        appendLog("Error: Invalid access channel string.");
+        return; // 或者执行其他错误处理逻辑
+    }
+    ProtocolFrame accessDataFrame = createDeviceControlFrame(DPType::ACCESS_SELECT, accessData);  // 发送通道值
+    sendFrame(accessDataFrame); 
+
+    ProtocolFrame maxChannelDataFrame = createDeviceControlFrame(DPType::MAXCHANNEL, maxChannelData);  // 发送最大频道值
+    sendFrame(maxChannelDataFrame); 
+    ProtocolFrame channelDataFrame = createDeviceControlFrame(DPType::CHANNEL, channelData);  // 发送频道值
+    sendFrame(channelDataFrame); 
 }
 
 // 超时处理槽函数
@@ -546,8 +576,22 @@ ProtocolFrame createQueryStatusFrame() {
 }
 
 // 设备控制构造
-ProtocolFrame createDeviceControlFrame(uint8_t deviceId, uint8_t commandValue) {
-    std::vector<uint8_t> data = {deviceId, commandValue};
+ProtocolFrame createDeviceControlFrame(DPType dpId, const std::vector<uint8_t>& commandValue) {
+    std::vector<uint8_t> data;
+    // 确保 dpId 对应的 DataType 存在
+    auto it = DPTypeToDataTypeMap.find(dpId);
+    if (it == DPTypeToDataTypeMap.end()) {
+        throw std::invalid_argument("Invalid DPType: no corresponding DataType found.");
+    }
+
+    // 构造数据
+    data.push_back(static_cast<uint8_t>(dpId));           // DP ID
+    data.push_back(it->second);                           // 数据类型
+    uint16_t commandLength = static_cast<uint16_t>(commandValue.size());
+    data.push_back((commandLength >> 8) & 0xFF);          // 功能长度的高字节
+    data.push_back(commandLength & 0xFF);                 // 功能长度的低字节
+    data.insert(data.end(), commandValue.begin(), commandValue.end()); // 插入功能指令数据
+
     return ProtocolFrame(DEVICE_CONTROL, data);
 }
 
@@ -564,7 +608,6 @@ ProtocolFrame createDeviceControlFrame(uint8_t deviceId, uint8_t commandValue) {
 // // 发送设备控制命令（示例: 控制设备开关）
 // ProtocolFrame deviceControlFrame = createDeviceControlFrame(0x14, 0x01);  // 示例: 控制开关
 // sendFrame(deviceControlFrame);
-
 
 
 
