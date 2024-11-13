@@ -111,6 +111,11 @@ void Widget::sendFrame(const ProtocolFrame& frame) {
     //     0x55, 0xAA, 0x00, 0x06, 0x00, 0x01, 0x01, 0x01  // 第三帧
     // };
     // receiveFrames(responseData);
+    std::vector<uint8_t> responseData = {
+        0x55, 0xAA, 0x03, 0x07, 0x00, 0x05, 0x14, 0x01, 0x00, 0x01, 0x00, 0x24,
+        0x55, 0xAA, 0x03, 0x07, 0x00, 0x05, 0x67, 0x04, 0x00, 0x01, 0x02, 0x7C
+    };
+    receiveFrames(responseData);
 }
 
 // 串口数据读取函数
@@ -183,13 +188,21 @@ void Widget::receiveFrames(std::vector<uint8_t>& buffer) {
                 std::cout << std::hex << std::setw(2) << std::setfill('0') << (int)byte << " ";
             }
             std::cout << std::endl;
-
             // 接收帧校验和
-            if (!responseFrame.validateChecksum(frameData)) {
-                std::cout << "Invalid checksum for received frame." << std::endl;
+            std::vector<uint8_t> frameData_tmp(frameData.begin(), frameData.end() - 1);
+            uint8_t checksum = 0x00;
+            for (auto byte : frameData_tmp) {
+                checksum += byte;
+            }
+            uint8_t calculatedChecksum = checksum & 0xff;
+            uint8_t receivedChecksum = frameData.back();
+            if (calculatedChecksum != receivedChecksum) {
+                appendLog("计算值：");
+                appendLog(QString::number(calculatedChecksum));
+                appendLog("原有值：");
+                appendLog(QString::number(receivedChecksum));
                 break; //校验和失败
             }
-
             // 根据响应的命令字解析并处理
             switch (responseFrame.command) {
                 case HEARTBEAT:
@@ -199,11 +212,9 @@ void Widget::receiveFrames(std::vector<uint8_t>& buffer) {
                     }
                     std::cout << std::endl;
                     break;
-                case QUERY_STATUS:
+                case MCU_RESPONSE:
                     std::cout << "Received Query Status response." << std::endl;
-                    break;
-                case DEVICE_CONTROL:
-                    std::cout << "Received Device Control response." << std::endl;
+                    receiveHandle(responseFrame.data);
                     break;
                 default:
                     std::cout << "Unknown command in response." << std::endl;
@@ -215,6 +226,44 @@ void Widget::receiveFrames(std::vector<uint8_t>& buffer) {
         } catch (const std::exception& e) {
             std::cout << "Error parsing received frame: " << e.what() << std::endl;
             break;
+        }
+    }
+}
+
+void Widget::receiveHandle(std::vector<uint8_t>& data)
+{
+    uint8_t DP_ID = data[0];
+//    uint16_t func_len = (data[2] << 8) | data[3];
+
+    if (DP_ID == static_cast<uint8_t>(DPType::MAXCHANNEL) | DP_ID == static_cast<uint8_t>(DPType::CHANNEL)) {
+        uint32_t channel_val = (data[4] << 24) | (data[5] << 16) | (data[6] << 8) | data[7];
+        if (DP_ID == static_cast<uint8_t>(DPType::MAXCHANNEL)) {
+            ui->label_max_channel_value->setText(QString::number(channel_val));
+        }
+        else {
+            ui->label_channel_value->setText(QString::number(channel_val));
+        }
+    }
+    else {
+        uint8_t func_val = data[4];
+        if (DP_ID == static_cast<uint8_t>(DPType::OFF_ON))
+        {
+            ui->label_switch_value->setText(SwitchStatusValueMap.find(func_val)->second);
+        }
+        else if (DP_ID == static_cast<uint8_t>(DPType::ACCESS_SELECT))
+        {
+            if (A_F_Flag != 0x11)
+            {
+                ui->label_access_value->setText(SwitchStatusValueMap.find(func_val)->second);
+            }
+        }
+        else if (DP_ID == static_cast<uint8_t>(DPType::POSITION_CONTROL))
+        {
+            ui->label_device_value->setText(DevCtrlStatusValueMap.find(func_val)->second);
+        }
+        else if (DP_ID == static_cast<uint8_t>(DPType::A_F_SELECT))
+        {
+            A_F_Flag = func_val;
         }
     }
 }
@@ -233,6 +282,11 @@ void Widget::scan_serial()
     }
 
     appendLog("查找串口成功");
+
+    ui->channelsCb->addItem("A");
+    ui->channelsCb->addItem("B");
+    ui->channelsCb->addItem("C");
+    ui->channelsCb->addItem("D");
 }
 
 void Widget::setEnabledMy(bool flag)
@@ -307,7 +361,7 @@ void Widget::on_openSerialBt_clicked()
         if(serialPort->open(QIODevice::ReadWrite) == true){
             ui->openSerialBt->setText("关闭串口");
             // 让端口号下拉框不可选，避免误操作（选择功能不可用，控件背景为灰色）
-//            ui->serialCb->setEnabled(false);
+            //  ui->serialCb->setEnabled(false);
             setEnabledMy(true);
             appendLog("串口打开成功");
 
@@ -339,7 +393,7 @@ void Widget::on_openSerialBt_clicked()
         serialPort->close();
         ui->openSerialBt->setText("打开串口");
         // 端口号下拉框恢复可选，避免误操作
-//        ui->serialCb->setEnabled(true);
+        // ui->serialCb->setEnabled(true);
         setEnabledMy(false);
         appendLog("串口关闭成功");
     }
@@ -356,7 +410,7 @@ void Widget::on_btnSerialCheck_clicked()
 void Widget::on_upBt_pressed()
 {
     // serialPort->write("CMD=UP\r\n");
-    std::vector<uint8_t> data = {DevCtrlValue::DevCtrl_UP};
+    std::vector<uint8_t> data = {static_cast<uint8_t>(DevCtrlValue::DevCtrl_UP)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
     sendFrame(dataFrame); 
     appendLog("上升中......");
@@ -365,7 +419,7 @@ void Widget::on_upBt_pressed()
 void Widget::on_downBt_pressed()
 {
     // serialPort->write("CMD=DOWN\r\n");
-    std::vector<uint8_t> data = {DevCtrlValue::DevCtrl_DOWN};
+    std::vector<uint8_t> data = {static_cast<uint8_t>(DevCtrlValue::DevCtrl_DOWN)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
     sendFrame(dataFrame); 
     appendLog("下降中......");
@@ -374,7 +428,7 @@ void Widget::on_downBt_pressed()
 void Widget::on_stopBt_clicked()
 {
     // serialPort->write("CMD=STOP\r\n");
-    std::vector<uint8_t> data = {DevCtrlValue::DevCtrl_STOP};
+    std::vector<uint8_t> data = {static_cast<uint8_t>(DevCtrlValue::DevCtrl_STOP)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
     sendFrame(dataFrame); 
     appendLog("停止运行");
@@ -413,7 +467,7 @@ void Widget::on_mode05Bt_clicked()
 
 void Widget::on_openBt_clicked()
 {
-    std::vector<uint8_t> data = {SwitchValue::SWITCH_ON};
+    std::vector<uint8_t> data = {static_cast<uint8_t>(SwitchValue::SWITCH_ON)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::OFF_ON, data);  
     sendFrame(dataFrame); 
     appendLog("发送open");
@@ -421,7 +475,7 @@ void Widget::on_openBt_clicked()
 
 void Widget::on_closeBt_clicked()
 {
-    std::vector<uint8_t> data = {SwitchValue::SWITCH_OFF};
+    std::vector<uint8_t> data = {static_cast<uint8_t>(SwitchValue::SWITCH_OFF)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::OFF_ON, data);  
     sendFrame(dataFrame); 
     appendLog("发送close");
@@ -436,17 +490,17 @@ void Widget::on_queryCb_clicked()
 
 void Widget::on_sendCb_clicked()
 {
+    std::vector<uint8_t> maxChannelData(4);
+    std::vector<uint8_t> channelData(4);
     if(!ui->maxChannelSetCb->text().isEmpty() && !ui->ChannelSetCb->text().isEmpty())
     {
         int maxChannelNumber = ui->maxChannelSetCb->text().toInt();
-        std::vector<uint8_t> maxChannelData(4);
         maxChannelData[0] = (maxChannelNumber >> 24) & 0xFF;  // 高字节
         maxChannelData[1] = (maxChannelNumber >> 16) & 0xFF;
         maxChannelData[2] = (maxChannelNumber >> 8) & 0xFF;
         maxChannelData[3] = maxChannelNumber & 0xFF;           // 低字节
 
         int channelNumber = ui->ChannelSetCb->text().toInt();
-        std::vector<uint8_t> channelData(4);
         channelData[0] = (channelNumber >> 24) & 0xFF;  // 高字节
         channelData[1] = (channelNumber >> 16) & 0xFF;
         channelData[2] = (channelNumber >> 8) & 0xFF;
@@ -467,7 +521,7 @@ void Widget::on_sendCb_clicked()
 
 
     std::vector<uint8_t> accessData;
-    auto it = StringAccessValueMap.find(ui->baundrateCb->currentText().toStdString());
+    auto it = StringAccessValueMap.find(ui->channelsCb->currentText().toStdString());
     if (it != StringAccessValueMap.end()) {
         accessData.push_back(it->second);
     } else {
@@ -497,117 +551,9 @@ void Widget::onResponseTimeout() {
 
 
 
-// 构造函数实现
-ProtocolFrame::ProtocolFrame(uint8_t cmd, const std::vector<uint8_t>& dataPayload)
-    : frameHeader(FRAME_HEADER), version(VERSION), command(cmd), dataLength(dataPayload.size()), data(dataPayload) {
-    checksum = calculateChecksum(serialize(false)); // 计算校验和
-}
-
-// 计算校验和函数实现
-uint8_t ProtocolFrame::calculateChecksum(const std::vector<uint8_t>& data) const {
-    uint8_t checksum = 0x00;
-    for (auto byte : data) {
-        checksum += byte;
-    }
-    return checksum & 0xff;   // 对256取余
-}
-
-// 序列化函数实现
-std::vector<uint8_t> ProtocolFrame::serialize(bool withChecksum) const {
-    std::vector<uint8_t> frame;
-    frame.push_back((frameHeader >> 8) & 0xFF); // 帧头的高字节
-    frame.push_back(frameHeader & 0xFF);         // 帧头的低字节
-    frame.push_back(version);                    // 版本号
-    frame.push_back(command);                    // 命令
-    frame.push_back((dataLength >> 8) & 0xFF);   // 数据长度的高字节
-    frame.push_back(dataLength & 0xFF);          // 数据长度的低字节
-    frame.insert(frame.end(), data.begin(), data.end()); // 插入数据
-    if (withChecksum) {
-        frame.push_back(checksum);               // 插入校验和
-    }
-    return frame;
-}
-
-// 校验和验证
-bool ProtocolFrame::validateChecksum(const std::vector<uint8_t>& frame) const {
-    uint16_t sum = std::accumulate(frame.begin(), frame.end() - 1, static_cast<uint16_t>(0));
-    uint8_t calculatedChecksum = sum % 0xff;
-    uint8_t receivedChecksum = frame.back();
-    return calculatedChecksum == receivedChecksum;
-}
-
-// 反序列化字节流，解析响应
-ProtocolFrame ProtocolFrame::deserialize(const std::vector<uint8_t>& rawData) {
-    if (rawData.size() < 7) {
-        throw std::invalid_argument("Invalid frame size");
-    }
-
-    uint16_t frameHeader = (rawData[0] << 8) | rawData[1];
-    uint8_t version = rawData[2];
-    uint8_t command = rawData[3];
-    uint16_t dataLength = (rawData[4] << 8) | rawData[5];
-    std::vector<uint8_t> data(rawData.begin() + 6, rawData.begin() + 6 + dataLength);
-    uint8_t checksum = rawData[6 + dataLength];
-
-    ProtocolFrame frame(command, data);
-    frame.frameHeader = frameHeader;
-    frame.version = version;
-    frame.dataLength = dataLength;
-    frame.checksum = checksum;
-
-    return frame;
-}
 
 
 
-
-
-
-// 心跳检测构造
-ProtocolFrame createHeartbeatFrame() {
-    std::vector<uint8_t> data = {};  // 初始接收0x00，后续0x01
-    return ProtocolFrame(HEARTBEAT, data);
-}
-
-// 查询状态构造
-ProtocolFrame createQueryStatusFrame() {
-    std::vector<uint8_t> data = {};
-    return ProtocolFrame(QUERY_STATUS, data);
-}
-
-// 设备控制构造
-ProtocolFrame createDeviceControlFrame(DPType dpId, const std::vector<uint8_t>& commandValue) {
-    std::vector<uint8_t> data;
-    // 确保 dpId 对应的 DataType 存在
-    auto it = DPTypeToDataTypeMap.find(dpId);
-    if (it == DPTypeToDataTypeMap.end()) {
-        throw std::invalid_argument("Invalid DPType: no corresponding DataType found.");
-    }
-
-    // 构造数据
-    data.push_back(static_cast<uint8_t>(dpId));           // DP ID
-    data.push_back(it->second);                           // 数据类型
-    uint16_t commandLength = static_cast<uint16_t>(commandValue.size());
-    data.push_back((commandLength >> 8) & 0xFF);          // 功能长度的高字节
-    data.push_back(commandLength & 0xFF);                 // 功能长度的低字节
-    data.insert(data.end(), commandValue.begin(), commandValue.end()); // 插入功能指令数据
-
-    return ProtocolFrame(DEVICE_CONTROL, data);
-}
-
-
-
-
-
-
-// // 发送心跳检测
-
-// // 发送查询状态请求
-
-
-// // 发送设备控制命令（示例: 控制设备开关）
-// ProtocolFrame deviceControlFrame = createDeviceControlFrame(0x14, 0x01);  // 示例: 控制开关
-// sendFrame(deviceControlFrame);
 
 
 
