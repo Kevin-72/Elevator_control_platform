@@ -110,9 +110,9 @@
   <widget class="QTextEdit" name="logViewer">
    <property name="geometry">
     <rect>
-     <x>710</x>
+     <x>600</x>
      <y>10</y>
-     <width>311</width>
+     <width>471</width>
      <height>551</height>
     </rect>
    </property>
@@ -173,7 +173,7 @@
     <rect>
      <x>330</x>
      <y>60</y>
-     <width>351</width>
+     <width>251</width>
      <height>151</height>
     </rect>
    </property>
@@ -189,7 +189,10 @@
        </font>
       </property>
       <property name="text">
-       <string>开关状态：</string>
+       <string>开关状态</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </item>
@@ -206,6 +209,9 @@
       <property name="text">
        <string>None</string>
       </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
      </widget>
     </item>
     <item row="3" column="1">
@@ -220,6 +226,9 @@
       </property>
       <property name="text">
        <string>None</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </item>
@@ -236,6 +245,9 @@
       <property name="text">
        <string>None</string>
       </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
      </widget>
     </item>
     <item row="1" column="0">
@@ -249,7 +261,10 @@
        </font>
       </property>
       <property name="text">
-       <string>通道：</string>
+       <string>通         道</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </item>
@@ -264,7 +279,10 @@
        </font>
       </property>
       <property name="text">
-       <string>设备升降：</string>
+       <string>设备升降</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </item>
@@ -279,7 +297,10 @@
        </font>
       </property>
       <property name="text">
-       <string>最大频道：</string>
+       <string>最大频道</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </item>
@@ -294,7 +315,10 @@
        </font>
       </property>
       <property name="text">
-       <string>频道：</string>
+       <string>频         道</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </item>
@@ -311,6 +335,9 @@
       <property name="text">
        <string>None</string>
       </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
+      </property>
      </widget>
     </item>
     <item row="1" column="1">
@@ -325,6 +352,9 @@
       </property>
       <property name="text">
        <string>None</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </item>
@@ -449,7 +479,7 @@
     <rect>
      <x>330</x>
      <y>250</y>
-     <width>351</width>
+     <width>251</width>
      <height>311</height>
     </rect>
    </property>
@@ -464,7 +494,10 @@
        </font>
       </property>
       <property name="text">
-       <string>通道</string>
+       <string>通    道</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </item>
@@ -488,7 +521,10 @@
        </font>
       </property>
       <property name="text">
-       <string>最大频道设置</string>
+       <string>最大频道</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </item>
@@ -511,7 +547,10 @@
        </font>
       </property>
       <property name="text">
-       <string>频道</string>
+       <string>频    道</string>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignCenter</set>
       </property>
      </widget>
     </item>
@@ -545,7 +584,7 @@
     <rect>
      <x>330</x>
      <y>20</y>
-     <width>351</width>
+     <width>251</width>
      <height>24</height>
     </rect>
    </property>
