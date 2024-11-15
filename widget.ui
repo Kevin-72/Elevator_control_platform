@@ -107,7 +107,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QPlainTextEdit" name="logViewer">
+  <widget class="QTextEdit" name="logViewer">
    <property name="geometry">
     <rect>
      <x>710</x>

@@ -11,6 +11,8 @@ CONFIG += c++11
 SOURCES += \
     main.cpp \
     protocol.cpp \
+    receive.cpp \
+    send.cpp \
     widget.cpp
 
 HEADERS += \

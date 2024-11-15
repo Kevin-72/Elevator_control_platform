@@ -12,6 +12,12 @@
 #include <QDateTime>
 #include <QMutex>
 #include <QByteArray>
+#include <QString>
+#include <QStringList>
+#include <QTextEdit>
+#include <QTextCursor>
+#include <QTextCharFormat>
+#include <QColor>
 
 #include "protocol.h"
 
@@ -31,7 +37,7 @@ public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
 
-    void appendLog(const QString &text);
+    void appendLog(const QString &text, const QColor &color = Qt::black);
 
     // 添加新的成员函数用于发送串口数据
     void sendSerialData(const QByteArray &data); 
@@ -40,7 +46,16 @@ public:
     // 添加新的成员函数用于读取串口数据
     void readSerialData();  
     void receiveFrames(std::vector<uint8_t>& buffer);
+    void heartbeatHandle(std::vector<uint8_t>& data);
     void receiveHandle(std::vector<uint8_t>& data);
+
+    // 处理各种状态
+    void handle_OFF_ON(uint8_t func_val);
+    void handle_ACCESS_SELECT(uint8_t func_val);
+    void handle_MAXCHANNEL(uint16_t func_val);
+    void handle_CHANNEL(uint16_t func_val);
+    void handle_POSITION_CONTROL(uint8_t func_val);
+    void handle_A_F_SELECT(uint8_t func_val);
 
     void scan_serial();
     void setEnabledMy(bool flag);
@@ -78,6 +93,7 @@ private:
 
     QThread *heartbeatThread;  // 新增心跳检测线程
     QTimer *heartbeatTimer;    // 心跳定时器
+    bool waitingForHeartbeat;  // 等待心跳响应标志
 
     bool waitingForResponse;  // 等待响应标志
     QByteArray lastSentData;  // 记录上次发送的数据
