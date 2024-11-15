@@ -7,10 +7,9 @@ F:\QT\Elevator_control_platform\lower_computer_80c51\串口通信.uvproj
 Project File Date:  04/24/2024
 
 <h2>Output:</h2>
-compiling main.c...
-main.c - 0 Error(s), 0 Warning(s).
 Build target 'Target 1'
 assembling STARTUP.A51...
+compiling main.c...
 linking...
 *** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
     SEGMENT: ?PR?_SERIALSEND?MAIN
@@ -20,9 +19,335 @@ creating hex file from "串口通信"...
 Build target 'Target 1'
 assembling STARTUP.A51...
 compiling main.c...
+MAIN.C(35): error C141: syntax error near ','
+MAIN.C(36): error C141: syntax error near ','
+MAIN.C(37): error C141: syntax error near ';'
+MAIN.C(77): error C141: syntax error near 'unsigned'
+MAIN.C(77): error C202: 'i': undefined identifier
+MAIN.C(77): error C202: 'i': undefined identifier
+MAIN.C(77): error C202: 'i': undefined identifier
+MAIN.C(77): error C141: syntax error near ')'
+MAIN.C(84): error C141: syntax error near ','
+MAIN.C(85): error C141: syntax error near 'unsigned'
+MAIN.C(85): error C202: 'i': undefined identifier
+MAIN.C(85): error C202: 'i': undefined identifier
+MAIN.C(85): error C202: 'i': undefined identifier
+MAIN.C(85): error C141: syntax error near ')'
+MAIN.C(86): error C141: syntax error near 'data'
+MAIN.C(94): error C141: syntax error near ','
+MAIN.C(96): error C141: syntax error near 'unsigned'
+MAIN.C(96): error C202: 'i': undefined identifier
+MAIN.C(96): error C202: 'i': undefined identifier
+MAIN.C(96): error C202: 'i': undefined identifier
+MAIN.C(96): error C141: syntax error near ')'
+MAIN.C(97): error C141: syntax error near 'data'
+MAIN.C(106): error C141: syntax error near 'unsigned'
+MAIN.C(106): error C202: 'received_char': undefined identifier
+MAIN.C(110): error C202: 'received_char': undefined identifier
+MAIN.C(116): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(121): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(123): error C208: '_CalculateChecksum': too many actual parameters
+MAIN.C(128): error C208: '_ValidateFrame': too many actual parameters
+Target not created
+compiling main.c...
+MAIN.C(34): error C141: syntax error near ','
+MAIN.C(35): error C141: syntax error near ','
+MAIN.C(36): error C141: syntax error near ';'
+MAIN.C(85): error C141: syntax error near ','
+MAIN.C(88): error C141: syntax error near 'data'
+MAIN.C(96): error C141: syntax error near ','
+MAIN.C(99): error C141: syntax error near 'data'
+MAIN.C(117): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(120): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(121): error C208: '_CalculateChecksum': too many actual parameters
+MAIN.C(124): error C208: '_ValidateFrame': too many actual parameters
+main.c - 11 Error(s), 0 Warning(s).
+compiling main.c...
+MAIN.C(34): error C141: syntax error near ','
+MAIN.C(35): error C141: syntax error near ','
+MAIN.C(36): error C141: syntax error near ';'
+MAIN.C(85): error C141: syntax error near ','
+MAIN.C(88): error C141: syntax error near 'data'
+MAIN.C(96): error C141: syntax error near ','
+MAIN.C(99): error C141: syntax error near 'data'
+MAIN.C(117): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(120): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(121): error C208: '_CalculateChecksum': too many actual parameters
+MAIN.C(124): error C208: '_ValidateFrame': too many actual parameters
+main.c - 11 Error(s), 0 Warning(s).
+compiling main.c...
+MAIN.C(38): error C141: syntax error near ','
+MAIN.C(39): error C141: syntax error near ','
+MAIN.C(40): error C141: syntax error near ';'
+MAIN.C(89): error C141: syntax error near ','
+MAIN.C(92): error C141: syntax error near 'data'
+MAIN.C(100): error C141: syntax error near ','
+MAIN.C(103): error C141: syntax error near 'data'
+MAIN.C(121): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(124): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(125): error C208: '_CalculateChecksum': too many actual parameters
+MAIN.C(128): error C208: '_ValidateFrame': too many actual parameters
+main.c - 11 Error(s), 0 Warning(s).
+compiling main.c...
+MAIN.C(77): error C141: syntax error near ','
+MAIN.C(80): error C141: syntax error near 'data'
+MAIN.C(88): error C141: syntax error near ','
+MAIN.C(91): error C141: syntax error near 'data'
+MAIN.C(109): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(112): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(113): error C208: '_CalculateChecksum': too many actual parameters
+MAIN.C(116): error C208: '_ValidateFrame': too many actual parameters
+main.c - 8 Error(s), 0 Warning(s).
+compiling main.c...
+MAIN.C(77): error C141: syntax error near ','
+MAIN.C(80): error C141: syntax error near 'data'
+MAIN.C(88): error C141: syntax error near ','
+MAIN.C(91): error C141: syntax error near 'data'
+MAIN.C(109): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(112): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(113): error C208: '_CalculateChecksum': too many actual parameters
+MAIN.C(116): error C208: '_ValidateFrame': too many actual parameters
+main.c - 8 Error(s), 0 Warning(s).
+compiling main.c...
+MAIN.C(77): error C141: syntax error near ','
+MAIN.C(80): error C141: syntax error near 'data'
+MAIN.C(88): error C141: syntax error near ','
+MAIN.C(91): error C141: syntax error near 'data'
+MAIN.C(109): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(112): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(113): error C208: '_CalculateChecksum': too many actual parameters
+MAIN.C(116): error C208: '_ValidateFrame': too many actual parameters
+main.c - 8 Error(s), 0 Warning(s).
+Build target 'Target 1'
+compiling main.c...
+MAIN.C(77): error C141: syntax error near ','
+MAIN.C(80): error C141: syntax error near 'data'
+MAIN.C(88): error C141: syntax error near ','
+MAIN.C(91): error C141: syntax error near 'data'
+MAIN.C(109): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(112): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(113): error C208: '_CalculateChecksum': too many actual parameters
+MAIN.C(116): error C208: '_ValidateFrame': too many actual parameters
+Target not created
+compiling main.c...
+MAIN.C(77): error C141: syntax error near ','
+MAIN.C(80): error C141: syntax error near 'data'
+MAIN.C(88): error C141: syntax error near ','
+MAIN.C(91): error C141: syntax error near 'data'
+MAIN.C(109): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(112): error C208: '_ValidateFrame': too many actual parameters
+MAIN.C(113): error C208: '_CalculateChecksum': too many actual parameters
+MAIN.C(116): error C208: '_ValidateFrame': too many actual parameters
+main.c - 8 Error(s), 0 Warning(s).
+compiling main.c...
+MAIN.C(88): error C141: syntax error near ','
+MAIN.C(91): error C141: syntax error near 'data'
+MAIN.C(113): error C208: '_CalculateChecksum': too many actual parameters
+main.c - 3 Error(s), 0 Warning(s).
+compiling main.c...
+MAIN.C(88): error C141: syntax error near ','
+MAIN.C(91): error C141: syntax error near 'data'
+MAIN.C(113): error C208: '_CalculateChecksum': too many actual parameters
+main.c - 3 Error(s), 0 Warning(s).
+compiling main.c...
+MAIN.C(142): error C249: 'DATA': SEGMENT TOO LARGE
+main.c - 1 Error(s), 0 Warning(s).
+compiling main.c...
+main.c - 0 Error(s), 0 Warning(s).
+Build target 'Target 1'
 linking...
 *** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
-    SEGMENT: ?PR?_SERIALSEND?MAIN
-Program Size: data=119.0 xdata=0 code=1321
+    SEGMENT: ?PR?_DELAY10MS?MAIN
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_SERIALSENDFRAME?MAIN
+    CALLER1: ?PR?SERIAL_ISR?MAIN
+    CALLER2: ?PR?TIMER_ISR?MAIN
+*** ERROR L107: ADDRESS SPACE OVERFLOW
+    SPACE:   IDATA   
+    SEGMENT: ?ID?MAIN
+    LENGTH:  006BH
+*** ERROR L105: PUBLIC REFERS TO IGNORED SEGMENT
+    SYMBOL:  FRAME3
+    SEGMENT: ?ID?MAIN
+*** ERROR L105: PUBLIC REFERS TO IGNORED SEGMENT
+    SYMBOL:  FRAME2
+    SEGMENT: ?ID?MAIN
+*** ERROR L105: PUBLIC REFERS TO IGNORED SEGMENT
+    SYMBOL:  FRAME1
+    SEGMENT: ?ID?MAIN
+*** ERROR L105: PUBLIC REFERS TO IGNORED SEGMENT
+    SYMBOL:  RESPONSE3
+    SEGMENT: ?ID?MAIN
+*** ERROR L105: PUBLIC REFERS TO IGNORED SEGMENT
+    SYMBOL:  RESPONSE2
+    SEGMENT: ?ID?MAIN
+*** ERROR L105: PUBLIC REFERS TO IGNORED SEGMENT
+    SYMBOL:  RESPONSE1
+    SEGMENT: ?ID?MAIN
+*** ERROR L105: PUBLIC REFERS TO IGNORED SEGMENT
+    SYMBOL:  ACTIVE_FRAME2
+    SEGMENT: ?ID?MAIN
+*** ERROR L105: PUBLIC REFERS TO IGNORED SEGMENT
+    SYMBOL:  ACTIVE_FRAME1
+    SEGMENT: ?ID?MAIN
+Program Size: data=149.0 xdata=0 code=833
+Target not created
+Build target 'Target 1'
+compiling main.c...
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_DELAY10MS?MAIN
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_SERIALSENDFRAME?MAIN
+    CALLER1: ?PR?SERIAL_ISR?MAIN
+    CALLER2: ?PR?TIMER_ISR?MAIN
+Program Size: data=111.0 xdata=38 code=835
+creating hex file from "串口通信"...
+"串口通信" - 0 Error(s), 2 Warning(s).
+Build target 'Target 1'
+compiling main.c...
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_DELAY10MS?MAIN
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_SERIALSENDFRAME?MAIN
+    CALLER1: ?PR?SERIAL_ISR?MAIN
+    CALLER2: ?PR?TIMER_ISR?MAIN
+Program Size: data=96.0 xdata=53 code=837
+creating hex file from "串口通信"...
+"串口通信" - 0 Error(s), 2 Warning(s).
+compiling main.c...
+main.c - 0 Error(s), 0 Warning(s).
+Build target 'Target 1'
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_SERIALSENDFRAME?MAIN
+    CALLER1: ?PR?SERIAL_ISR?MAIN
+    CALLER2: ?PR?TIMER_ISR?MAIN
+Program Size: data=96.0 xdata=53 code=812
+creating hex file from "串口通信"...
+"串口通信" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling main.c...
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_SERIALSENDFRAME?MAIN
+    CALLER1: ?PR?SERIAL_ISR?MAIN
+    CALLER2: ?PR?TIMER_ISR?MAIN
+Program Size: data=96.0 xdata=53 code=812
+creating hex file from "串口通信"...
+"串口通信" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling main.c...
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_SERIALSENDFRAME?MAIN
+    CALLER1: ?PR?SERIAL_ISR?MAIN
+    CALLER2: ?PR?TIMER_ISR?MAIN
+Program Size: data=96.0 xdata=53 code=812
+creating hex file from "串口通信"...
+"串口通信" - 0 Error(s), 1 Warning(s).
+compiling main.c...
+MAIN.C(62): error C141: syntax error near 'void'
+main.c - 1 Error(s), 0 Warning(s).
+compiling main.c...
+main.c - 0 Error(s), 0 Warning(s).
+Build target 'Target 1'
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_SERIALSENDFRAME?MAIN
+    CALLER1: ?C_C51STARTUP
+    CALLER2: ?PR?SERIAL_ISR?MAIN
+Program Size: data=96.0 xdata=53 code=760
+creating hex file from "串口通信"...
+"串口通信" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling main.c...
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_SERIALSENDFRAME?MAIN
+    CALLER1: ?C_C51STARTUP
+    CALLER2: ?PR?SERIAL_ISR?MAIN
+Program Size: data=96.0 xdata=53 code=760
+creating hex file from "串口通信"...
+"串口通信" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling main.c...
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_SERIALSENDFRAME?MAIN
+    CALLER1: ?C_C51STARTUP
+    CALLER2: ?PR?SERIAL_ISR?MAIN
+Program Size: data=96.0 xdata=53 code=760
+creating hex file from "串口通信"...
+"串口通信" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling main.c...
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_SERIALSENDFRAME?MAIN
+    CALLER1: ?C_C51STARTUP
+    CALLER2: ?PR?SERIAL_ISR?MAIN
+Program Size: data=96.0 xdata=53 code=749
+creating hex file from "串口通信"...
+"串口通信" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling main.c...
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_SERIALSENDFRAME?MAIN
+    CALLER1: ?C_C51STARTUP
+    CALLER2: ?PR?SERIAL_ISR?MAIN
+Program Size: data=96.0 xdata=53 code=749
+creating hex file from "串口通信"...
+"串口通信" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling main.c...
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_SERIALSENDFRAME?MAIN
+    CALLER1: ?C_C51STARTUP
+    CALLER2: ?PR?SERIAL_ISR?MAIN
+Program Size: data=96.0 xdata=53 code=756
+creating hex file from "串口通信"...
+"串口通信" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling main.c...
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_SERIALSENDFRAME?MAIN
+    CALLER1: ?C_C51STARTUP
+    CALLER2: ?PR?SERIAL_ISR?MAIN
+Program Size: data=96.0 xdata=53 code=756
+creating hex file from "串口通信"...
+"串口通信" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling main.c...
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_SERIALSENDFRAME?MAIN
+    CALLER1: ?C_C51STARTUP
+    CALLER2: ?PR?SERIAL_ISR?MAIN
+Program Size: data=92.0 xdata=53 code=752
+creating hex file from "串口通信"...
+"串口通信" - 0 Error(s), 1 Warning(s).
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling main.c...
+linking...
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_SERIALSENDFRAME?MAIN
+    CALLER1: ?C_C51STARTUP
+    CALLER2: ?PR?SERIAL_ISR?MAIN
+Program Size: data=92.0 xdata=53 code=752
 creating hex file from "串口通信"...
 "串口通信" - 0 Error(s), 1 Warning(s).

@@ -14,21 +14,15 @@ void Widget::readSerialData()
     isReceiving = true;  // 设置接收标志为 true，表示正在接收
 
     QByteArray receivedData = serialPort->readAll();  // 读取数据
-    appendLog("Received: " + receivedData);
 
-    // 检查是否是期望的响应
-    if (waitingForResponse) {
-        responseTimeoutTimer->stop();  // 停止超时定时器
-
-        // 完成接收，重置等待标志
-        waitingForResponse = false;
-    }
+    responseTimeoutTimer->stop();  // 停止超时定时器
+    isReceiving = false;  // 接收完成，重置接收标志
+    waitingForHeartbeat = false;
+    waitingForResponse = false;  // 重置等待标志
 
     // 处理接收到的帧数据
     std::vector<uint8_t> buffer(receivedData.begin(), receivedData.end());
     receiveFrames(buffer);
-
-    isReceiving = false;  // 接收完成，重置接收标志
 }
 
 
@@ -42,7 +36,7 @@ void Widget::receiveFrames(std::vector<uint8_t>& buffer) {
         }
         
         if (headerPos + 1 >= buffer.size()) {
-            appendLog("Error: Incomplete or invalid frame, unable to find frame header.");
+            appendLog("Error: Incomplete or invalid frame, unable to find frame header.", Qt::red);
             break;  // 没有找到有效的帧头，退出处理
         }
 
@@ -52,7 +46,7 @@ void Widget::receiveFrames(std::vector<uint8_t>& buffer) {
 
         // 检查缓冲区是否包含完整的一帧
         if (buffer.size() < headerPos + totalFrameSize) {
-            appendLog("Error: Waiting for more data to complete the frame.");
+            appendLog("Error: Waiting for more data to complete the frame.", Qt::red);
             break;  // 数据不完整，等待更多数据
         }
 
@@ -66,7 +60,7 @@ void Widget::receiveFrames(std::vector<uint8_t>& buffer) {
             for (auto byte : frameData) {
                 logMessage += QString("%1 ").arg(byte, 2, 16, QChar('0')).toUpper();  // 将字节格式化为两位十六进制
             }
-            appendLog(logMessage);
+            appendLog(logMessage, Qt::blue);
 
             // 接收帧校验和
             std::vector<uint8_t> frameData_tmp(frameData.begin(), frameData.end() - 1);
@@ -77,6 +71,7 @@ void Widget::receiveFrames(std::vector<uint8_t>& buffer) {
             uint8_t calculatedChecksum = checksum & 0xff;
             uint8_t receivedChecksum = frameData.back();
             if (calculatedChecksum != receivedChecksum) {
+                appendLog("校验和错误！！", Qt::red);
                 appendLog("计算值：");
                 appendLog(QString::number(calculatedChecksum));
                 appendLog("原有值：");
@@ -87,42 +82,44 @@ void Widget::receiveFrames(std::vector<uint8_t>& buffer) {
             // 根据响应的命令字解析并处理
             switch (responseFrame.command) {
                 case HEARTBEAT:
-                    appendLog("Heartbeat response received successfully.");
+                    appendLog("Heartbeat successfully.", Qt::green);
                     heartbeatHandle(responseFrame.data);
                     waitingForHeartbeat = false;
+                    waitingForResponse = false;  // 重置等待标志
                     break;
                 case MCU_RESPONSE:
-                    appendLog("Device control response received successfully.");
+                    appendLog("Response successfully.", Qt::green);
                     receiveHandle(responseFrame.data);
                     break;
                 default:
-                    appendLog("Unknown command in response.");
+                    appendLog("Unknown command in response.", Qt::red);
                     break;
             }
 
             // 删除已处理的帧
             buffer.erase(buffer.begin(), buffer.begin() + headerPos + totalFrameSize);
         } catch (const std::exception& e) {
-            appendLog("Error parsing received frame: ");
+            appendLog("Error parsing received frame: ", Qt::red);
             break;
         }
+        appendLog("---------------", Qt::lightGray);
     }
 }
 
 void Widget::heartbeatHandle(std::vector<uint8_t>& data)
 {
     if (data.size() < 1) {
-        appendLog("heartbeat data size is too small to process.");
+        appendLog("heartbeat data size is too small to process.", Qt::red);
         return;
     }
 
-    if (data[0] == 0x00) {
-        appendLog("接收到首次心跳响应");
-    } else if (data[0] == 0x01) {
-        appendLog("接收到正常心跳响应");
-    } else {
-        appendLog("接收的心跳数据错误");
-    }
+//    if (data[0] == 0x00) {
+//        appendLog("接收到首次心跳响应");
+//    } else if (data[0] == 0x01) {
+//        appendLog("接收到正常心跳响应");
+//    } else {
+//        appendLog("接收的心跳数据错误");
+//    }
 
     // 心跳响应正常时恢复操作
     setEnabledMy(true); 
@@ -132,7 +129,7 @@ void Widget::heartbeatHandle(std::vector<uint8_t>& data)
 void Widget::receiveHandle(std::vector<uint8_t>& data)
 {
     if (data.size() < 5) {
-        appendLog("receive data size is too small to process.");
+        appendLog("receive data size is too small to process.", Qt::red);
         return;
     }
 
@@ -152,7 +149,7 @@ void Widget::receiveHandle(std::vector<uint8_t>& data)
 
         case DPType::MAXCHANNEL: {
             if (data.size() < 6) {
-                appendLog("Data size is insufficient for MAXCHANNEL.");
+                appendLog("Data size is insufficient for MAXCHANNEL.", Qt::red);
                 return;
             }
             uint16_t max_channel_value = (data[offset_BASE] << 8) | data[offset_BASE + 1];
@@ -162,7 +159,7 @@ void Widget::receiveHandle(std::vector<uint8_t>& data)
 
         case DPType::CHANNEL: {
             if (data.size() < 6) {
-                appendLog("Data size is insufficient for CHANNEL.");
+                appendLog("Data size is insufficient for CHANNEL.", Qt::red);
                 return;
             }
             uint16_t channel_value = (data[offset_BASE] << 8) | data[offset_BASE + 1];
@@ -185,7 +182,7 @@ void Widget::receiveHandle(std::vector<uint8_t>& data)
         case DPType::ALL_STATUS: {
             appendLog("处理所有状态");
             if (data.size() < 0x0c) {
-                appendLog("Data size is insufficient for CHANNEL.");
+                appendLog("Data size is insufficient for CHANNEL.", Qt::red);
                 return;
             }
             uint16_t max_channel_value = (data[offset_BASE + offset_MAXCHANNEL] << 8) | data[offset_BASE + offset_MAXCHANNEL + 1];
@@ -201,7 +198,7 @@ void Widget::receiveHandle(std::vector<uint8_t>& data)
         }
             
         default:
-            appendLog("Unknown command in response.");
+            appendLog("Unknown command in response.", Qt::red);
             break;
     }
 }
@@ -257,7 +254,7 @@ void Widget::handle_A_F_SELECT(uint8_t func_val)
     }
     else
     {
-        appendLog("AF通道选择数据异常，修改失败....................");
+        appendLog("AF通道选择数据异常，修改失败....................", Qt::red);
     }
 }
 

@@ -29,6 +29,9 @@ Widget::Widget(QWidget *parent)
     // 设置响应超时定时器间隔
     responseTimeoutTimer->setSingleShot(true);  // 设置为单次定时器
 
+    // 启动心跳检测线程
+    startHeartbeatThread();
+
 
     ui->maxChannelSetCb->setValidator(new QIntValidator(ui->maxChannelSetCb));
     ui->ChannelSetCb->setValidator(new QIntValidator(ui->ChannelSetCb));
@@ -87,7 +90,7 @@ void Widget::scan_serial()
         }
     }
 
-    appendLog("查找串口成功");
+    appendLog("查找串口成功", Qt::green);
 }
 
 void Widget::setEnabledMy(bool flag)
@@ -121,28 +124,38 @@ void Widget::setEnabledMy(bool flag)
 
 void Widget::startHeartbeatThread()
 {
+    // 如果心跳线程已经在运行，直接返回，不重复启动
+    if (heartbeatThread->isRunning()) {
+        return;
+    }
+
+    // 如果定时器已经启动，直接返回，不重复启动
+    if (heartbeatTimer->isActive()) {
+        return;
+    }
+
     // 将定时器设置为定期触发
-    heartbeatTimer->setInterval(8000); // 每隔1秒发送一次心跳
+    heartbeatTimer->setInterval(8000); // 每隔8秒发送一次心跳
     connect(heartbeatTimer, &QTimer::timeout, this, &Widget::sendHeartbeat);
 
-    // 将定时器移到独立线程中
-    heartbeatTimer->moveToThread(heartbeatThread);
+    // 如果线程没有在运行，则启动线程
+    if (!heartbeatThread->isRunning()) {
+        // 启动心跳线程
+        heartbeatThread->start();
+    }
 
-    // 启动心跳线程
-    heartbeatThread->start();
-
-    // 启动定时器
+    // 启动心跳定时器
     heartbeatTimer->start();
 }
+
 
 void Widget::sendHeartbeat()
 {
     ProtocolFrame frame = createHeartbeatFrame();  // 创建心跳帧
     waitingForHeartbeat = true;
-    sendFrame(frame);  // 发送心跳帧
     appendLog("发送心跳帧");
+    sendFrame(frame);  // 发送心跳帧
 }
-
 
 
 /*打开串口*/
@@ -164,17 +177,17 @@ void Widget::on_openSerialBt_clicked()
             // 让端口号下拉框不可选，避免误操作（选择功能不可用，控件背景为灰色）
             //  ui->serialCb->setEnabled(false);
             setEnabledMy(true);
-            appendLog("串口打开成功");
+            appendLog("串口打开成功", Qt::green);
 
             // 启动接收线程
             // isReceiving = true;
             receiverThread->start();
 
-            // 启动心跳检测线程
-            startHeartbeatThread();
+            // 恢复心跳检测线程
+            heartbeatTimer->start(); // 恢复定时器
         }else{
             QMessageBox::critical(this, "错误提示", "串口打开失败！！！\r\n该串口可能被占用\r\n请选择正确的串口");
-            appendLog("串口打开失败");
+            appendLog("串口打开失败", Qt::red);
         }
     }else{
         isReceiving = false;
@@ -191,12 +204,17 @@ void Widget::on_openSerialBt_clicked()
         heartbeatTimer->stop();
         responseTimeoutTimer->stop();
 
+        waitingForHeartbeat = false;
+        waitingForResponse = false;  // 重置等待标志
+
+        responseTimeoutTimer->stop();  // 停止超时定时器
+
         serialPort->close();
         ui->openSerialBt->setText("打开串口");
         // 端口号下拉框恢复可选，避免误操作
         // ui->serialCb->setEnabled(true);
         setEnabledMy(false);
-        appendLog("串口关闭成功");
+        appendLog("串口关闭成功", Qt::green);
     }
 }
 
