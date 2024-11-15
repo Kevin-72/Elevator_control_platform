@@ -1,4 +1,6 @@
 #include "widget.h"
+#include "ui_widget.h"
+
 
 // 构造函数实现
 ProtocolFrame::ProtocolFrame(uint8_t cmd, const std::vector<uint8_t>& dataPayload)
@@ -31,18 +33,6 @@ std::vector<uint8_t> ProtocolFrame::serialize(bool withChecksum) const {
     return frame;
 }
 
-//// 校验和验证
-//bool ProtocolFrame::validateChecksum(const std::vector<uint8_t>& frame) const {
-//    std::vector<uint8_t> frameData(frame.begin(), frame.end() - 1);
-//    uint8_t checksum = 0x00;
-//    for (auto byte : data) {
-//        checksum += byte;
-//    }
-////    uint16_t sum = std::accumulate(frame.begin(), frame.end() - 1, static_cast<uint16_t>(0));
-//    uint8_t calculatedChecksum = checksum & 0xff;
-//    uint8_t receivedChecksum = frame.back();
-//    return calculatedChecksum == receivedChecksum;
-//}
 
 // 反序列化字节流，解析响应
 ProtocolFrame ProtocolFrame::deserialize(const std::vector<uint8_t>& rawData) {

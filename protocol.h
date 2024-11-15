@@ -1,10 +1,6 @@
 #ifndef PROTOCOL_H
 #define PROTOCOL_H
 
-#include <QString>
-#include <QStringList>
-
-
 #include <cstdint>
 #include <iomanip>
 #include <iostream>
@@ -12,11 +8,19 @@
 #include <unordered_map>
 #include <string>
 
+#include "widget.h"
 
 using namespace std;
 
 
-#define  RESPONSETIMEOUTTIMESET  200      // 响应超时时间设置
+#define RESPONSETIMEOUTTIMESET  200      // 响应超时时间设置
+#define offset_BASE             4
+#define offset_OFF_ON           0
+#define offset_ACCESS_SELECT    1
+#define offset_MAXCHANNEL       2
+#define offset_CHANNEL          4
+#define offset_POSITION_CONTROL 6
+#define offset_A_F_SELECT       7
 
 // 协议字段定义
 const uint16_t FRAME_HEADER = 0x55AA;  // 帧头
@@ -49,10 +53,6 @@ public:
     // 将帧序列化为字节流
     std::vector<uint8_t> serialize(bool withChecksum = true) const;
 
-
-//    // 检查校验和
-//    bool validateChecksum(const std::vector<uint8_t>& frame) const;
-
     // 反序列化字节流，解析响应
     static ProtocolFrame deserialize(const std::vector<uint8_t>& rawData);
 
@@ -66,7 +66,8 @@ enum class DPType : uint8_t {
     MAXCHANNEL = 0x65,
     CHANNEL = 0x66,
     POSITION_CONTROL = 0x67,
-    A_F_SELECT = 0x68
+    A_F_SELECT = 0x68,
+    ALL_STATUS = 0x69
 };
 
 
@@ -84,7 +85,8 @@ static const std::unordered_map<DPType, DataType> DPTypeToDataTypeMap = {
     {DPType::MAXCHANNEL, DataType::TYPE_02},
     {DPType::CHANNEL, DataType::TYPE_02},
     {DPType::POSITION_CONTROL, DataType::TYPE_04},
-    {DPType::A_F_SELECT, DataType::TYPE_01}
+    {DPType::A_F_SELECT, DataType::TYPE_01},
+    {DPType::ALL_STATUS, DataType::TYPE_02}
 };
 
 
@@ -93,14 +95,11 @@ enum class SwitchValue : uint8_t {
     SWITCH_OFF = 0x00,
     SWITCH_ON  = 0x01,
 };
-static const std::unordered_map<SwitchValue, std::string> SwitchValueMap = {
+static const std::unordered_map<SwitchValue, QString> SwitchValueMap = {
     {SwitchValue::SWITCH_OFF, "OFF"},
     {SwitchValue::SWITCH_ON, "ON"}
 };
-static const std::unordered_map<uint8_t, QString> SwitchStatusValueMap = {
-    {0x00, "OFF"},
-    {0x01, "ON"}
-};
+
 
 // 定义AD类型通道值
 enum class ADAccessValue : uint8_t {
@@ -109,7 +108,7 @@ enum class ADAccessValue : uint8_t {
     ADACCESS_C = 0x02,
     ADACCESS_D = 0x03
 };
-static const std::unordered_map<ADAccessValue, std::string> ADAccessValueMap = {
+static const std::unordered_map<ADAccessValue, QString> ADAccessValueMap = {
     {ADAccessValue::ADACCESS_A, "A"},
     {ADAccessValue::ADACCESS_B, "B"},
     {ADAccessValue::ADACCESS_C, "C"},
@@ -118,46 +117,46 @@ static const std::unordered_map<ADAccessValue, std::string> ADAccessValueMap = {
 
 // 定义F类型通道值
 enum class FAccessValue : uint8_t {
-    FACCESS_0 = 0x00,
-    FACCESS_1 = 0x01,
-    FACCESS_2 = 0x02,
-    FACCESS_3 = 0x03,
-    FACCESS_4 = 0x04,
-    FACCESS_5 = 0x05,
-    FACCESS_6 = 0x06,
-    FACCESS_7 = 0x07,
-    FACCESS_8 = 0x08,
-    FACCESS_9 = 0x09
+    FACCESS_F0 = 0x00,
+    FACCESS_F1 = 0x01,
+    FACCESS_F2 = 0x02,
+    FACCESS_F3 = 0x03,
+    FACCESS_F4 = 0x04,
+    FACCESS_F5 = 0x05,
+    FACCESS_F6 = 0x06,
+    FACCESS_F7 = 0x07,
+    FACCESS_F8 = 0x08,
+    FACCESS_F9 = 0x09
 };
-static const std::unordered_map<FAccessValue, std::string> FAccessValueMap = {
-    {FAccessValue::FACCESS_0, "F0"},
-    {FAccessValue::FACCESS_1, "F1"},
-    {FAccessValue::FACCESS_2, "F2"},
-    {FAccessValue::FACCESS_3, "F3"},
-    {FAccessValue::FACCESS_4, "F4"},
-    {FAccessValue::FACCESS_5, "F5"},
-    {FAccessValue::FACCESS_6, "F6"},
-    {FAccessValue::FACCESS_7, "F7"},
-    {FAccessValue::FACCESS_8, "F8"},
-    {FAccessValue::FACCESS_9, "F9"}
+static const std::unordered_map<FAccessValue, QString> FAccessValueMap = {
+    {FAccessValue::FACCESS_F0, "F0"},
+    {FAccessValue::FACCESS_F1, "F1"},
+    {FAccessValue::FACCESS_F2, "F2"},
+    {FAccessValue::FACCESS_F3, "F3"},
+    {FAccessValue::FACCESS_F4, "F4"},
+    {FAccessValue::FACCESS_F5, "F5"},
+    {FAccessValue::FACCESS_F6, "F6"},
+    {FAccessValue::FACCESS_F7, "F7"},
+    {FAccessValue::FACCESS_F8, "F8"},
+    {FAccessValue::FACCESS_F9, "F9"}
 };
 
 // 定义通道字符对应的值
 static const std::unordered_map<std::string, uint8_t> StringAccessValueMap = {
-    {"A", 0x00},
-    {"B", 0x01},
-    {"C", 0x02},
-    {"D", 0x03},
-    {"F0", 0x00},
-    {"F1", 0x01},
-    {"F2", 0x02},
-    {"F3", 0x03},
-    {"F4", 0x04},
-    {"F5", 0x05},
-    {"F6", 0x06},
-    {"F7", 0x07},
-    {"F8", 0x08},
-    {"F9", 0x09}
+    {"A", static_cast<uint8_t>(ADAccessValue::ADACCESS_A)},
+    {"B", static_cast<uint8_t>(ADAccessValue::ADACCESS_B)},
+    {"C", static_cast<uint8_t>(ADAccessValue::ADACCESS_C)},
+    {"D", static_cast<uint8_t>(ADAccessValue::ADACCESS_D)},
+    {"F0", static_cast<uint8_t>(FAccessValue::FACCESS_F0)},
+    {"F1", static_cast<uint8_t>(FAccessValue::FACCESS_F1)},
+    {"F2", static_cast<uint8_t>(FAccessValue::FACCESS_F2)},
+    {"F3", static_cast<uint8_t>(FAccessValue::FACCESS_F3)},
+    {"F4", static_cast<uint8_t>(FAccessValue::FACCESS_F4)},
+    {"F5", static_cast<uint8_t>(FAccessValue::FACCESS_F5)},
+    {"F6", static_cast<uint8_t>(FAccessValue::FACCESS_F6)},
+    {"F7", static_cast<uint8_t>(FAccessValue::FACCESS_F7)},
+    {"F8", static_cast<uint8_t>(FAccessValue::FACCESS_F8)},
+    {"F9", static_cast<uint8_t>(FAccessValue::FACCESS_F9)}
 };
 
 // 定义设备控制功能值
@@ -166,15 +165,10 @@ enum class DevCtrlValue : uint8_t {
     DevCtrl_STOP = 0x01,
     DevCtrl_DOWN = 0x02
 };
-static const std::unordered_map<DevCtrlValue, std::string> DevCtrlValueMap = {
+static const std::unordered_map<DevCtrlValue, QString> DevCtrlValueMap = {
     {DevCtrlValue::DevCtrl_UP, "UP"},
     {DevCtrlValue::DevCtrl_STOP, "STOP"},
     {DevCtrlValue::DevCtrl_DOWN, "DOWN"}
-};
-static const std::unordered_map<uint8_t, QString> DevCtrlStatusValueMap = {
-    {0x00, "UP"},
-    {0x01, "STOP"},
-    {0x02, "DOWN"}
 };
 
 // 定义A/F通道类型值
