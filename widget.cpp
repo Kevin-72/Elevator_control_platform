@@ -145,7 +145,7 @@ void Widget::startHeartbeatThread()
     }
 
     // 启动心跳定时器
-    heartbeatTimer->start();
+//    heartbeatTimer->start();
 }
 
 
