@@ -13,7 +13,7 @@
 using namespace std;
 
 
-#define RESPONSETIMEOUTTIMESET  2000      // 响应超时时间设置
+#define RESPONSETIMEOUTTIMESET  500      // 响应超时时间设置
 #define offset_BASE             4
 #define offset_OFF_ON           0
 #define offset_ACCESS_SELECT    1

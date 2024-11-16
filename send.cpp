@@ -5,15 +5,16 @@
 void Widget::onResponseTimeout() {
     if (waitingForResponse) {
         appendLog("Error: Response timeout.", Qt::red);
-        waitingForResponse = false;  // 重置等待标志
     }
-
     if (waitingForHeartbeat)
     {
         appendLog("Error: 等待心跳超时，禁止操作面板，直至心跳恢复！请检查模组连接是否出现异常。", Qt::red);
-        waitingForHeartbeat = false;
         setEnabledMy(false);    
     }
+    responseTimeoutTimer->stop();  // 停止超时定时器
+    isReceiving = false;  // 重置接收标志
+    waitingForHeartbeat = false;
+    waitingForResponse = false;  // 重置等待标志
 }
 
 // 发送数据时加锁，确保在接收操作时禁止发送
@@ -194,13 +195,20 @@ void Widget::on_sendCb_clicked()
         return; // 或者执行其他错误处理逻辑
     }
     ProtocolFrame accessDataFrame = createDeviceControlFrame(DPType::ACCESS_SELECT, accessData);  
+    appendLog("发送通道值");
     sendFrame(accessDataFrame); 
 
-     // 发送最大频道值
-    ProtocolFrame maxChannelDataFrame = createDeviceControlFrame(DPType::MAXCHANNEL, maxChannelData); 
-    sendFrame(maxChannelDataFrame); 
+//    QThread::msleep(1000);
+//    appendLog("等待 1s");
 
-    // 发送频道值
-    ProtocolFrame channelDataFrame = createDeviceControlFrame(DPType::CHANNEL, channelData);  
-    sendFrame(channelDataFrame); 
+//     // 发送最大频道值
+    ProtocolFrame maxChannelDataFrame = createDeviceControlFrame(DPType::MAXCHANNEL, maxChannelData);
+    sendFrame(maxChannelDataFrame);
+
+//    QThread::msleep(1000);
+//    appendLog("等待 1s");
+
+//    // 发送频道值
+    ProtocolFrame channelDataFrame = createDeviceControlFrame(DPType::CHANNEL, channelData);
+    sendFrame(channelDataFrame);
 }
