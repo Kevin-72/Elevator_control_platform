@@ -5,16 +5,25 @@
 void Widget::onResponseTimeout() {
     if (waitingForResponse) {
         appendLog("Error: Response timeout.", Qt::red);
+        waitingForResponse = false;  // 重置等待标志
+        responseTimeoutTimer->stop();  // 停止超时定时器
+        isReceiving = false;  // 重置接收标志
     }
     if (waitingForHeartbeat)
     {
         appendLog("Error: 等待心跳超时，禁止操作面板，直至心跳恢复！请检查模组连接是否出现异常。", Qt::red);
         setEnabledMy(false);    
+        waitingForHeartbeat = false;
     }
-    responseTimeoutTimer->stop();  // 停止超时定时器
-    isReceiving = false;  // 重置接收标志
-    waitingForHeartbeat = false;
-    waitingForResponse = false;  // 重置等待标志
+
+    if (deviceStatus) {
+        appendLog("设备连接错误，请更换其他串口或者检查设备连接状态！！", Qt::red);
+        QMessageBox::critical(this, "错误提示", "设备连接错误，请更换其他串口或者检查设备连接状态！！");
+        setEnabledMy(false);
+        heartbeatTimer->stop();
+        deviceStatus = false;
+    }
+
 }
 
 // 发送数据时加锁，确保在接收操作时禁止发送
@@ -106,31 +115,31 @@ void Widget::on_stopBt_clicked()
 
 void Widget::on_mode01Bt_clicked()
 {
-     serialPort->write("MODE=01\r\n");
+    //  serialPort->write("MODE=01\r\n");
     appendLog("启动模式1");
 }
 
 void Widget::on_mode02Bt_clicked()
 {
-     serialPort->write("MODE=02\r\n");
+    //  serialPort->write("MODE=02\r\n");
     appendLog("启动模式2");
 }
 
 void Widget::on_mode03Bt_clicked()
 {
-     serialPort->write("MODE=03\r\n");
+    //  serialPort->write("MODE=03\r\n");
     appendLog("启动模式3");
 }
 
 void Widget::on_mode04Bt_clicked()
 {
-     serialPort->write("MODE=04\r\n");
+    //  serialPort->write("MODE=04\r\n");
     appendLog("启动模式4");
 }
 
 void Widget::on_mode05Bt_clicked()
 {
-     serialPort->write("MODE=05\r\n");
+    //  serialPort->write("MODE=05\r\n");
     appendLog("启动模式5");
 }
 
@@ -157,26 +166,38 @@ void Widget::on_queryCb_clicked()
     sendFrame(queryStatusFrame);
 }
 
-void Widget::on_sendCb_clicked()
+
+void Widget::on_channelsCb_currentIndexChanged(const QString &arg1)
+{
+    // accessRev为false时正在处理接收数据，此时禁止发送
+    if (accessRev) {
+        // 发送通道值
+        std::vector<uint8_t> accessData;
+        auto it = StringAccessValueMap.find(ui->channelsCb->currentText().toStdString());
+        if (it != StringAccessValueMap.end()) {
+            accessData.push_back(it->second);
+        } else {
+            QMessageBox::critical(this, "错误提示", "Invalid access channel string.\r\n");
+            appendLog("Error: Invalid access channel string.", Qt::red);
+            return; // 或者执行其他错误处理逻辑
+        }
+        ProtocolFrame accessDataFrame = createDeviceControlFrame(DPType::ACCESS_SELECT, accessData);
+        appendLog("发送通道值");
+        sendFrame(accessDataFrame);
+    }
+
+}
+
+
+
+void Widget::on_maxChannelSetCb_returnPressed()
 {
     std::vector<uint8_t> maxChannelData(2);
-    std::vector<uint8_t> channelData(2);
-    if(!ui->maxChannelSetCb->text().isEmpty() && !ui->ChannelSetCb->text().isEmpty())
+    if(!ui->maxChannelSetCb->text().isEmpty())
     {
-        int maxChannelNumber = ui->maxChannelSetCb->text().toInt();
+        maxChannelNumber = ui->maxChannelSetCb->text().toInt();
         maxChannelData[0] = (maxChannelNumber >> 8) & 0xFF;  // 高字节
         maxChannelData[1] = maxChannelNumber & 0xFF;         // 低字节
-
-        int channelNumber = ui->ChannelSetCb->text().toInt();
-        channelData[0] = (channelNumber >> 8) & 0xFF;       // 高字节
-        channelData[1] = channelNumber & 0xFF;              // 低字节
-
-        if (maxChannelNumber < channelNumber)
-        {
-            QMessageBox::critical(this, "错误提示", "频道设置不能超过最大频道值\r\n请重新设置！！！");
-            appendLog("发送失败，请重新设置！", Qt::red);
-            return;
-        }
     }
     else
     {
@@ -184,31 +205,34 @@ void Widget::on_sendCb_clicked()
         appendLog("发送失败，请重新设置！", Qt::red);
     }
 
-    // 发送通道值
-    std::vector<uint8_t> accessData;
-    auto it = StringAccessValueMap.find(ui->channelsCb->currentText().toStdString());
-    if (it != StringAccessValueMap.end()) {
-        accessData.push_back(it->second);
-    } else {
-        QMessageBox::critical(this, "错误提示", "Invalid access channel string.\r\n");
-        appendLog("Error: Invalid access channel string.", Qt::red);
-        return; // 或者执行其他错误处理逻辑
-    }
-    ProtocolFrame accessDataFrame = createDeviceControlFrame(DPType::ACCESS_SELECT, accessData);  
-    appendLog("发送通道值");
-    sendFrame(accessDataFrame); 
-
-//    QThread::msleep(1000);
-//    appendLog("等待 1s");
-
-//     // 发送最大频道值
+     // 发送最大频道值
+    appendLog("发送最大频道值");
+    ui->maxChannelSetCb->clear();
     ProtocolFrame maxChannelDataFrame = createDeviceControlFrame(DPType::MAXCHANNEL, maxChannelData);
     sendFrame(maxChannelDataFrame);
+}
 
-//    QThread::msleep(1000);
-//    appendLog("等待 1s");
 
-//    // 发送频道值
+void Widget::on_ChannelSetCb_returnPressed()
+{
+    std::vector<uint8_t> channelData(2);
+    if (!ui->ChannelSetCb->text().isEmpty()) {
+        channelNumber = ui->ChannelSetCb->text().toInt();
+        channelData[0] = (channelNumber >> 8) & 0xFF;       // 高字节
+        channelData[1] = channelNumber & 0xFF;              // 低字节
+    }
+
+    if (maxChannelNumber < channelNumber)
+    {
+        QMessageBox::critical(this, "错误提示", QString("频道设置不能超过最大频道值%1\r\n请重新设置！！！").arg(maxChannelNumber));
+        appendLog("发送失败，请重新设置！", Qt::red);
+        return;
+    }
+
+    // 发送频道值
+    appendLog("发送频道值");
+    ui->ChannelSetCb->clear();
     ProtocolFrame channelDataFrame = createDeviceControlFrame(DPType::CHANNEL, channelData);
     sendFrame(channelDataFrame);
 }
+

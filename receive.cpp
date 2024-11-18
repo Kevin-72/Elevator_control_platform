@@ -17,7 +17,7 @@ void Widget::readSerialData()
 
     responseTimeoutTimer->stop();  // 停止超时定时器
     isReceiving = false;  // 接收完成，重置接收标志
-    waitingForHeartbeat = false;
+//    waitingForHeartbeat = false;
     waitingForResponse = false;  // 重置等待标志
 
     // 处理接收到的帧数据
@@ -37,6 +37,13 @@ void Widget::receiveFrames(std::vector<uint8_t>& buffer) {
         
         if (headerPos + 1 >= buffer.size()) {
             appendLog("Error: Incomplete or invalid frame, unable to find frame header.", Qt::red);
+            if (deviceStatus) {
+                appendLog("设备连接错误，请更换其他串口！！", Qt::red);
+                QMessageBox::critical(this, "错误提示", "设备连接错误，请更换其他串口或者检查设备连接状态！！");
+                setEnabledMy(false);
+                heartbeatTimer->stop();
+                deviceStatus = false;
+            }
             break;  // 没有找到有效的帧头，退出处理
         }
 
@@ -89,7 +96,9 @@ void Widget::receiveFrames(std::vector<uint8_t>& buffer) {
                     break;
                 case MCU_RESPONSE:
                     appendLog("Response successfully.", Qt::green);
+                    accessRev = false;      // 接收数据处理过程，禁止发送通道数据
                     receiveHandle(responseFrame.data);
+                    accessRev = true;
                     break;
                 default:
                     appendLog("Unknown command in response.", Qt::red);
@@ -194,6 +203,14 @@ void Widget::receiveHandle(std::vector<uint8_t>& data)
             handle_MAXCHANNEL(max_channel_value);
             handle_CHANNEL(channel_value);
             handle_POSITION_CONTROL(data[offset_BASE + offset_POSITION_CONTROL]);
+
+            if (deviceStatus) {
+                appendLog("设备连接成功", Qt::green);
+                // 启动心跳检测定时器
+                heartbeatTimer->start();
+                deviceStatus = false;
+                setEnabledMy(true);
+            }
             break;
         }
             
@@ -215,16 +232,19 @@ void Widget::handle_ACCESS_SELECT(uint8_t func_val)
     if (A_F_Flag == static_cast<uint8_t>(AFSelectValue::AFSelect_A)) {
         auto it = ADAccessValueMap.find(static_cast<ADAccessValue>(func_val));
         ui->label_access_value->setText(it != ADAccessValueMap.end() ? it->second : "Unknown");
+        ui->channelsCb->setCurrentText(it != ADAccessValueMap.end() ? it->second : "Unknown");
     } 
     else if (A_F_Flag == static_cast<uint8_t>(AFSelectValue::AFSelect_F)) {
         auto it = FAccessValueMap.find(static_cast<FAccessValue>(func_val));
         ui->label_access_value->setText(it != FAccessValueMap.end() ? it->second : "Unknown");
+        ui->channelsCb->setCurrentText(it != FAccessValueMap.end() ? it->second : "Unknown");
     }
 }
 
 void Widget::handle_MAXCHANNEL(uint16_t func_val)
 {
     ui->label_max_channel_value->setText(QString::number(func_val));
+    maxChannelNumber = func_val;
 }
 
 void Widget::handle_CHANNEL(uint16_t func_val)
