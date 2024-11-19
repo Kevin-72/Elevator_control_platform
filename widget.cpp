@@ -109,7 +109,9 @@ void Widget::scan_serial()
     // 设置优先选项, 尝试打开串口
     if (foundPorts.isEmpty()) {
         appendLog("未找到任何串口", Qt::red);
-        QMessageBox::critical(this, "错误提示", "未找到任何串口！");
+        if (serialOpenCount > 0) {
+            QMessageBox::critical(this, "错误提示", "未找到任何串口！");
+        }
     }
     else {
         appendLog(QString("找到 %1 个串口").arg(foundPorts.size()), Qt::green);
@@ -280,8 +282,8 @@ void Widget::on_serialCb_currentTextChanged(const QString &arg1)
             setEnabledMy(true);
             appendLog(QString("串口 %1 打开成功，波特率：9600").arg(portName), Qt::green);
 
-//            // 启动接收线程
-//            receiverThread->start();
+            // 启动接收线程
+            receiverThread->start();
 
             ProtocolFrame queryStatusFrame = createQueryStatusFrame();
             appendLog("尝试连接设备：");

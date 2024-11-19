@@ -6,6 +6,7 @@
 void Widget::readSerialData()
 {
     if (isReceiving) {
+        appendLog("Error: 当前已处于接收状态，无法继续接收.....", Qt::red);
         return;  // 如果当前正在接收数据，跳过
     }
 

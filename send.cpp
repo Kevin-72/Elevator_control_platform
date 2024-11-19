@@ -5,10 +5,10 @@
 void Widget::onResponseTimeout() {
     if (waitingForResponse) {
         appendLog("Error: Response timeout.", Qt::red);
-        waitingForResponse = false;  // 重置等待标志
-        responseTimeoutTimer->stop();  // 停止超时定时器
-        isReceiving = false;  // 重置接收标志
     }
+    waitingForResponse = false;  // 重置等待标志
+    responseTimeoutTimer->stop();  // 停止超时定时器
+    isReceiving = false;  // 重置接收标志
     if (waitingForHeartbeat)
     {
         appendLog("Error: 等待心跳超时，禁止操作面板，直至心跳恢复！请检查模组连接是否出现异常。", Qt::red);
@@ -50,7 +50,12 @@ void Widget::sendSerialData(const QByteArray &data) {
     }
 
     // 启动响应超时定时器
-    responseTimeoutTimer->start(RESPONSETIMEOUTTIMESET);  // 设置超时为 200 毫秒
+    if (!serialOpenCount) {
+        responseTimeoutTimer->start(RESPONSETIMEOUTTIMESET * 3);  // 设置超时 毫秒
+    }
+    else {
+        responseTimeoutTimer->start(RESPONSETIMEOUTTIMESET);  // 设置超时 毫秒
+    }
 }
 
 // 模拟发送协议帧
