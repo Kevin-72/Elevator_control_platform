@@ -138,20 +138,28 @@ void Widget::on_mode05Bt_clicked()
     appendLog("启动模式5");
 }
 
-void Widget::on_openBt_clicked()
+void Widget::on_mode06Bt_clicked()
 {
-    std::vector<uint8_t> data = {static_cast<uint8_t>(SwitchValue::SWITCH_ON)};
-    ProtocolFrame dataFrame = createDeviceControlFrame(DPType::OFF_ON, data);  
-    appendLog("发送open");
-    sendFrame(dataFrame); 
+    appendLog("启动模式6");
 }
 
-void Widget::on_closeBt_clicked()
+void Widget::on_openBt_clicked()
 {
-    std::vector<uint8_t> data = {static_cast<uint8_t>(SwitchValue::SWITCH_OFF)};
-    ProtocolFrame dataFrame = createDeviceControlFrame(DPType::OFF_ON, data);  
-    appendLog("发送close");
-    sendFrame(dataFrame); 
+    if (switchStatus) {
+        std::vector<uint8_t> data = {static_cast<uint8_t>(SwitchValue::SWITCH_ON)};
+        ProtocolFrame dataFrame = createDeviceControlFrame(DPType::OFF_ON, data);
+        appendLog("发送open");
+        sendFrame(dataFrame);
+        ui->openBt->setText("关闭");
+    }
+    else {
+        std::vector<uint8_t> data = {static_cast<uint8_t>(SwitchValue::SWITCH_OFF)};
+        ProtocolFrame dataFrame = createDeviceControlFrame(DPType::OFF_ON, data);
+        appendLog("发送close");
+        sendFrame(dataFrame);
+        ui->openBt->setText("开启");
+    }
+
 }
 
 void Widget::on_queryCb_clicked()
