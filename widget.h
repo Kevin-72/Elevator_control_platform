@@ -18,10 +18,8 @@
 #include <QTextCursor>
 #include <QTextCharFormat>
 #include <QColor>
-#include <QWaitCondition>
 
 #include "protocol.h"
-#include <vector>
 
 using namespace std;
 
@@ -66,10 +64,8 @@ public:
     void startHeartbeatThread();
     void sendHeartbeat();
 
-
-
 private slots:
-//    void on_openSerialBt_clicked();
+    void on_openSerialBt_clicked();
     void on_btnSerialCheck_clicked();
     void on_upBt_pressed();
     void on_downBt_pressed();
@@ -83,18 +79,8 @@ private slots:
     void on_openBt_clicked();
     void on_closeBt_clicked();
     void on_queryCb_clicked();
-//    void on_sendCb_clicked();
+    void on_sendCb_clicked();
     void onResponseTimeout();  // 响应超时槽函数
-
-    void on_serialCb_currentTextChanged(const QString &arg1);
-
-    void on_channelsCb_currentIndexChanged(const QString &arg1);
-
-//    void on_sendCb_2_clicked();
-
-    void on_maxChannelSetCb_returnPressed();
-
-    void on_ChannelSetCb_returnPressed();
 
 private:
     Ui::Widget *ui;
@@ -107,23 +93,13 @@ private:
 
     QThread *heartbeatThread;  // 新增心跳检测线程
     QTimer *heartbeatTimer;    // 心跳定时器
-    bool waitingForHeartbeat = false;  // 等待心跳响应标志
+    bool waitingForHeartbeat;  // 等待心跳响应标志
 
     bool waitingForResponse;  // 等待响应标志
     QByteArray lastSentData;  // 记录上次发送的数据
     QTimer *responseTimeoutTimer;  // 响应超时定时器
 
     uint8_t A_F_Flag = 0x11;
-
-    uint32_t serialOpenCount = 0;
-
-    bool deviceStatus = false;   // 设备请求连接标志
-    bool scanSerialStatus = false; // 串口扫描状态
-
-    bool accessRev = false;      // accessRev为false时正在处理接收数据，此时禁止发送通道数据
-
-    int maxChannelNumber = 0;
-    int channelNumber = 0;
 };
 
 
