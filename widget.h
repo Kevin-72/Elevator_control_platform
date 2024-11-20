@@ -18,6 +18,12 @@
 #include <QTextCursor>
 #include <QTextCharFormat>
 #include <QColor>
+#include <QMouseEvent>
+#include <QFile>
+#include <QFileInfo>
+#include <QProcess>
+#include <QStandardPaths>
+
 
 #include "protocol.h"
 
@@ -36,6 +42,9 @@ class Widget : public QWidget
 public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
+
+    void openOrCreateFile(const QString &fileName);
+    bool eventFilter(QObject *watched, QEvent *event);
 
     void appendLog(const QString &text, const QColor &color = Qt::black);
 
@@ -71,6 +80,7 @@ private slots:
     void on_downBt_pressed();
     void on_stopBt_clicked();
     void on_mode01Bt_clicked();
+    void on_mode01Bt_rightClicked();
     void on_mode02Bt_clicked();
     void on_mode03Bt_clicked();
     void on_mode04Bt_clicked();
