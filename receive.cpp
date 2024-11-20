@@ -210,6 +210,15 @@ void Widget::handle_OFF_ON(uint8_t func_val)
 {
     auto it = SwitchValueMap.find(static_cast<SwitchValue>(func_val));
     ui->label_switch_value->setText(it != SwitchValueMap.end() ? it->second : "Unknown");
+    if (static_cast<SwitchValue>(func_val) == SwitchValue::SWITCH_OFF) {
+        ui->openBt->setText("开启");
+        switchStatus = true;
+    }
+    else {
+        ui->openBt->setText("关闭");
+        switchStatus = false;
+    }
+
 }
 
 void Widget::handle_ACCESS_SELECT(uint8_t func_val)

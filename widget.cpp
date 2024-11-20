@@ -31,6 +31,8 @@ Widget::Widget(QWidget *parent)
     // 启动心跳检测线程
     startHeartbeatThread();
 
+    ui->openBt->setText("None");
+
 
     ui->maxChannelSetCb->setValidator(new QIntValidator(ui->maxChannelSetCb));
     ui->ChannelSetCb->setValidator(new QIntValidator(ui->ChannelSetCb));
@@ -120,7 +122,7 @@ void Widget::setEnabledMy(bool flag)
     ui->label_5->setEnabled(flag);
 
     ui->openBt->setEnabled(flag);
-    ui->closeBt->setEnabled(flag);
+//    ui->closeBt->setEnabled(flag);
     ui->upBt->setEnabled(flag);
     ui->downBt->setEnabled(flag);
     ui->stopBt->setEnabled(flag);
@@ -129,6 +131,7 @@ void Widget::setEnabledMy(bool flag)
     ui->mode03Bt->setEnabled(flag);
     ui->mode04Bt->setEnabled(flag);
     ui->mode05Bt->setEnabled(flag);
+    ui->mode06Bt->setEnabled(flag);
     ui->channelsCb->setEnabled(flag);
     ui->maxChannelSetCb->setEnabled(flag);
     ui->ChannelSetCb->setEnabled(flag);
@@ -183,8 +186,6 @@ void Widget::on_openSerialBt_clicked()
     serialPort->setStopBits(QSerialPort::OneStop);
     serialPort->setParity(QSerialPort::NoParity);
 
-    selectSerial = true;
-
     // 根据初始化好的串口属性，打开串口
     // 如果打开成功，反转打开按钮显示和功能。打开失败，无变化，并且弹出错误对话框。
     if(ui->openSerialBt->text() == "打开串口"){
@@ -201,13 +202,15 @@ void Widget::on_openSerialBt_clicked()
 
             // 恢复心跳检测线程
             heartbeatTimer->start(); // 恢复定时器
-
+            selectSerial = true;
             emit ui->queryCb->clicked();
+            selectSerial = false;
         }else{
             QMessageBox::critical(this, "错误提示", "串口打开失败！！！\r\n该串口可能被占用\r\n请选择正确的串口");
             appendLog("串口打开失败", Qt::red);
         }
     }else{
+        ui->openBt->setText("None");
         selectSerial = false;
         isReceiving = false;
         // 停止接收线程
