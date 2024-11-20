@@ -33,6 +33,9 @@ Widget::Widget(QWidget *parent)
 
     ui->openBt->setText("None");
 
+    // 安装事件过滤器
+    ui->mode01Bt->installEventFilter(this);
+
 
     ui->maxChannelSetCb->setValidator(new QIntValidator(ui->maxChannelSetCb));
     ui->ChannelSetCb->setValidator(new QIntValidator(ui->ChannelSetCb));
@@ -53,6 +56,73 @@ Widget::~Widget()
     heartbeatTimer->stop();
     responseTimeoutTimer->stop();
     delete ui;
+}
+
+void Widget::openOrCreateFile(const QString &fileName) {
+    // 获取用户文档目录路径
+    QString documentsDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
+
+    // 拼接文件路径
+    QString filePath = documentsDir + "/" + fileName;
+
+    // 检查文件是否存在
+    QFileInfo fileInfo(filePath);
+    if (!fileInfo.exists()) {
+        // 文件不存在，创建文件
+        QFile file(filePath);
+        if (file.open(QIODevice::WriteOnly)) {
+            appendLog(QString("File created: %1").arg(filePath), Qt::green);
+            file.close();
+        } else {
+            appendLog(QString("Failed to create file: %1").arg(filePath), Qt::red);
+            return;
+        }
+    } else {
+        appendLog(QString("File exists: %1").arg(filePath), Qt::blue);
+    }
+
+    // 使用 QTextEdit 打开并编辑文件
+    QFile file(filePath);
+    if (file.open(QIODevice::ReadOnly | QIODevice::Text)) {
+        QTextEdit *textEdit = new QTextEdit();
+        textEdit->setPlainText(file.readAll());
+        file.close();
+        textEdit->show();
+
+        // 设置窗口标题为文件的完整路径
+        textEdit->setWindowTitle(filePath);  // 设置窗口标题为文件路径
+        textEdit->resize(800, 600); // 设置合适的窗口大小（宽度 800，高度 600）
+        textEdit->show();
+
+        // 在文本编辑器关闭时自动保存
+        connect(textEdit, &QTextEdit::textChanged, [=]() {
+            QFile saveFile(filePath);
+            if (saveFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+                saveFile.write(textEdit->toPlainText().toUtf8());
+                appendLog(QString("File saved: %1").arg(filePath), Qt::green);
+                saveFile.close();
+            } else {
+                appendLog(QString("Failed to save file: %1").arg(filePath), Qt::red);
+            }
+        });
+    }
+}
+
+
+
+
+
+// 重写事件处理函数
+bool Widget::eventFilter(QObject *watched, QEvent *event)
+{
+    if (watched == ui->mode01Bt && event->type() == QEvent::MouseButtonPress) {
+        QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
+        if (mouseEvent->button() == Qt::RightButton) {
+            on_mode01Bt_rightClicked();
+            return true;  // 事件已处理
+        }
+    }
+    return QWidget::eventFilter(watched, event);  // 保留默认处理
 }
 
 

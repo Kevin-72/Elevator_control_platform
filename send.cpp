@@ -114,6 +114,13 @@ void Widget::on_mode01Bt_clicked()
     appendLog("启动模式1");
 }
 
+void Widget::on_mode01Bt_rightClicked()
+{
+    appendLog("右键点击模式1按钮", Qt::blue);
+    serialPort->write("MODE=01 RIGHT CLICK\r\n");
+    openOrCreateFile("mode1.txt");
+}
+
 void Widget::on_mode02Bt_clicked()
 {
      serialPort->write("MODE=02\r\n");
