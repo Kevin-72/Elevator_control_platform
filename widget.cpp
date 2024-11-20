@@ -12,11 +12,10 @@ Widget::Widget(QWidget *parent)
     responseTimeoutTimer(new QTimer(this))
 {
     ui->setupUi(this);
-    this->setWindowTitle("升降器控制平台(测试版 V1.0)");
+    this->setWindowTitle("升降器控制平台(测试版 V3.0)");
 
     QStringList serialNamePort;
 
-    ui->serialCb->clear();
     // 获取并遍历所有可用的串口
     scan_serial();
 
@@ -79,6 +78,8 @@ void Widget::appendLog(const QString &text, const QColor &color) {
 
 void Widget::scan_serial()
 {
+    ui->serialCb->clear();
+    QStringList foundPorts;          // 保存所有可用串口的名称
     foreach(const QSerialPortInfo &info, QSerialPortInfo::availablePorts()) {
         // 格式化串口名称和额外信息
         if (info.description().contains("serial", Qt::CaseInsensitive)) {
@@ -88,19 +89,32 @@ void Widget::scan_serial()
         else {
             ui->serialCb->addItem(info.portName());
         }
+
+        foundPorts.append(info.portName());
     }
 
-    appendLog("查找串口成功", Qt::green);
+    if (foundPorts.isEmpty()) {
+        appendLog("未找到任何串口", Qt::red);
+        if (serialCount) {
+            QMessageBox::critical(this, "错误提示", "未找到任何串口！");
+        }
+        ui->openSerialBt->setEnabled(false);
+    }
+    else {
+        serialCount = true;
+        appendLog("查找串口成功", Qt::green);
+        ui->openSerialBt->setEnabled(true);
+    }
 }
 
 void Widget::setEnabledMy(bool flag)
 {
-    ui->baundrateCb->setEnabled(!flag);
+//    ui->baundrateCb->setEnabled(!flag);
     ui->btnSerialCheck->setEnabled(!flag);
     ui->serialCb->setEnabled(!flag);
 
     ui->label_1->setEnabled(!flag);
-    ui->label_2->setEnabled(!flag);
+//    ui->label_2->setEnabled(!flag);
     ui->label_3->setEnabled(flag);
     ui->label_4->setEnabled(flag);
     ui->label_5->setEnabled(flag);
@@ -118,7 +132,7 @@ void Widget::setEnabledMy(bool flag)
     ui->channelsCb->setEnabled(flag);
     ui->maxChannelSetCb->setEnabled(flag);
     ui->ChannelSetCb->setEnabled(flag);
-    ui->sendCb->setEnabled(flag);
+//    ui->sendCb->setEnabled(flag);
     ui->queryCb->setEnabled(flag);
 }
 
@@ -135,7 +149,7 @@ void Widget::startHeartbeatThread()
     }
 
     // 将定时器设置为定期触发
-    heartbeatTimer->setInterval(8000); // 每隔8秒发送一次心跳
+    heartbeatTimer->setInterval(HEARTBEATTIMESET); // 每隔秒发送一次心跳
     connect(heartbeatTimer, &QTimer::timeout, this, &Widget::sendHeartbeat);
 
     // 如果线程没有在运行，则启动线程
@@ -164,10 +178,12 @@ void Widget::on_openSerialBt_clicked()
     // 初始化串口属性，设置 端口号、波特率、数据位、停止位、奇偶校验位数
     QRegularExpression re("COM\\d+");
     serialPort->setPortName(re.match(ui->serialCb->currentText()).captured(0));
-    serialPort->setBaudRate(ui->baundrateCb->currentText().toInt());
+    serialPort->setBaudRate(QSerialPort::Baud9600);
     serialPort->setDataBits(QSerialPort::Data8);
     serialPort->setStopBits(QSerialPort::OneStop);
     serialPort->setParity(QSerialPort::NoParity);
+
+    selectSerial = true;
 
     // 根据初始化好的串口属性，打开串口
     // 如果打开成功，反转打开按钮显示和功能。打开失败，无变化，并且弹出错误对话框。
@@ -185,11 +201,14 @@ void Widget::on_openSerialBt_clicked()
 
             // 恢复心跳检测线程
             heartbeatTimer->start(); // 恢复定时器
+
+            emit ui->queryCb->clicked();
         }else{
             QMessageBox::critical(this, "错误提示", "串口打开失败！！！\r\n该串口可能被占用\r\n请选择正确的串口");
             appendLog("串口打开失败", Qt::red);
         }
     }else{
+        selectSerial = false;
         isReceiving = false;
         // 停止接收线程
         if (receiverThread->isRunning()) {
@@ -221,8 +240,8 @@ void Widget::on_openSerialBt_clicked()
 //检测通讯端口槽函数
 void Widget::on_btnSerialCheck_clicked()
 {
+    serialCount = true;
     ui->serialCb->clear();
     //通过QSerialPortInfo查找可用串口
     scan_serial();
 }
-
