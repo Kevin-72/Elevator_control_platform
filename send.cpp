@@ -15,6 +15,10 @@ void Widget::onResponseTimeout() {
     isReceiving = false;  // 重置接收标志
     waitingForHeartbeat = false;
     waitingForResponse = false;  // 重置等待标志
+    if (selectSerial) {
+        emit ui->openSerialBt->clicked();
+        QMessageBox::critical(this, "错误提示", "串口选择错误！\r\n请选择正确的串口");
+    }
 }
 
 // 发送数据时加锁，确保在接收操作时禁止发送
@@ -157,26 +161,38 @@ void Widget::on_queryCb_clicked()
     sendFrame(queryStatusFrame);
 }
 
-void Widget::on_sendCb_clicked()
+
+void Widget::on_channelsCb_currentIndexChanged(const QString &arg1)
+{
+    // accessRev为false时正在处理接收数据，此时禁止发送
+    if (accessRev) {
+        // 发送通道值
+        std::vector<uint8_t> accessData;
+        auto it = StringAccessValueMap.find(ui->channelsCb->currentText().toStdString());
+        if (it != StringAccessValueMap.end()) {
+            accessData.push_back(it->second);
+        } else {
+            QMessageBox::critical(this, "错误提示", "Invalid access channel string.\r\n");
+            appendLog("Error: Invalid access channel string.", Qt::red);
+            return; // 或者执行其他错误处理逻辑
+        }
+        ProtocolFrame accessDataFrame = createDeviceControlFrame(DPType::ACCESS_SELECT, accessData);
+        appendLog("发送通道值");
+        sendFrame(accessDataFrame);
+    }
+
+}
+
+
+
+void Widget::on_maxChannelSetCb_returnPressed()
 {
     std::vector<uint8_t> maxChannelData(2);
-    std::vector<uint8_t> channelData(2);
-    if(!ui->maxChannelSetCb->text().isEmpty() && !ui->ChannelSetCb->text().isEmpty())
+    if(!ui->maxChannelSetCb->text().isEmpty())
     {
-        int maxChannelNumber = ui->maxChannelSetCb->text().toInt();
+        maxChannelNumber = ui->maxChannelSetCb->text().toInt();
         maxChannelData[0] = (maxChannelNumber >> 8) & 0xFF;  // 高字节
         maxChannelData[1] = maxChannelNumber & 0xFF;         // 低字节
-
-        int channelNumber = ui->ChannelSetCb->text().toInt();
-        channelData[0] = (channelNumber >> 8) & 0xFF;       // 高字节
-        channelData[1] = channelNumber & 0xFF;              // 低字节
-
-        if (maxChannelNumber < channelNumber)
-        {
-            QMessageBox::critical(this, "错误提示", "频道设置不能超过最大频道值\r\n请重新设置！！！");
-            appendLog("发送失败，请重新设置！", Qt::red);
-            return;
-        }
     }
     else
     {
@@ -184,31 +200,33 @@ void Widget::on_sendCb_clicked()
         appendLog("发送失败，请重新设置！", Qt::red);
     }
 
-    // 发送通道值
-    std::vector<uint8_t> accessData;
-    auto it = StringAccessValueMap.find(ui->channelsCb->currentText().toStdString());
-    if (it != StringAccessValueMap.end()) {
-        accessData.push_back(it->second);
-    } else {
-        QMessageBox::critical(this, "错误提示", "Invalid access channel string.\r\n");
-        appendLog("Error: Invalid access channel string.", Qt::red);
-        return; // 或者执行其他错误处理逻辑
-    }
-    ProtocolFrame accessDataFrame = createDeviceControlFrame(DPType::ACCESS_SELECT, accessData);  
-    appendLog("发送通道值");
-    sendFrame(accessDataFrame); 
-
-//    QThread::msleep(1000);
-//    appendLog("等待 1s");
-
-//     // 发送最大频道值
+     // 发送最大频道值
+    appendLog("发送最大频道值");
+    ui->maxChannelSetCb->clear();
     ProtocolFrame maxChannelDataFrame = createDeviceControlFrame(DPType::MAXCHANNEL, maxChannelData);
     sendFrame(maxChannelDataFrame);
+}
 
-//    QThread::msleep(1000);
-//    appendLog("等待 1s");
 
-//    // 发送频道值
+void Widget::on_ChannelSetCb_returnPressed()
+{
+    std::vector<uint8_t> channelData(2);
+    if (!ui->ChannelSetCb->text().isEmpty()) {
+        channelNumber = ui->ChannelSetCb->text().toInt();
+        channelData[0] = (channelNumber >> 8) & 0xFF;       // 高字节
+        channelData[1] = channelNumber & 0xFF;              // 低字节
+    }
+
+    if (maxChannelNumber < channelNumber)
+    {
+        QMessageBox::critical(this, "错误提示", QString("频道设置不能超过最大频道值%1\r\n请重新设置！！！").arg(maxChannelNumber));
+        appendLog("发送失败，请重新设置！", Qt::red);
+        return;
+    }
+
+    // 发送频道值
+    appendLog("发送频道值");
+    ui->ChannelSetCb->clear();
     ProtocolFrame channelDataFrame = createDeviceControlFrame(DPType::CHANNEL, channelData);
     sendFrame(channelDataFrame);
 }

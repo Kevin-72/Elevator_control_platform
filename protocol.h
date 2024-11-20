@@ -12,7 +12,7 @@
 
 using namespace std;
 
-
+#define HEARTBEATTIMESET 10000     // 心跳间隔时间
 #define RESPONSETIMEOUTTIMESET  500      // 响应超时时间设置
 #define offset_BASE             4
 #define offset_OFF_ON           0

@@ -89,7 +89,9 @@ void Widget::receiveFrames(std::vector<uint8_t>& buffer) {
                     break;
                 case MCU_RESPONSE:
                     appendLog("Response successfully.", Qt::green);
+                    accessRev = false;      // 接收数据处理过程，禁止发送通道数据
                     receiveHandle(responseFrame.data);
+                    accessRev = true;
                     break;
                 default:
                     appendLog("Unknown command in response.", Qt::red);
@@ -215,16 +217,19 @@ void Widget::handle_ACCESS_SELECT(uint8_t func_val)
     if (A_F_Flag == static_cast<uint8_t>(AFSelectValue::AFSelect_A)) {
         auto it = ADAccessValueMap.find(static_cast<ADAccessValue>(func_val));
         ui->label_access_value->setText(it != ADAccessValueMap.end() ? it->second : "Unknown");
+        ui->channelsCb->setCurrentText(it != ADAccessValueMap.end() ? it->second : "Unknown");
     } 
     else if (A_F_Flag == static_cast<uint8_t>(AFSelectValue::AFSelect_F)) {
         auto it = FAccessValueMap.find(static_cast<FAccessValue>(func_val));
         ui->label_access_value->setText(it != FAccessValueMap.end() ? it->second : "Unknown");
+        ui->channelsCb->setCurrentText(it != FAccessValueMap.end() ? it->second : "Unknown");
     }
 }
 
 void Widget::handle_MAXCHANNEL(uint16_t func_val)
 {
     ui->label_max_channel_value->setText(QString::number(func_val));
+    maxChannelNumber = func_val;
 }
 
 void Widget::handle_CHANNEL(uint16_t func_val)
