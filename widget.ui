@@ -245,7 +245,7 @@
     <string>查询状态</string>
    </property>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>30</x>
@@ -265,7 +265,7 @@
        </font>
       </property>
       <property name="text">
-       <string>None</string>
+       <string>开关</string>
       </property>
       <attribute name="buttonGroup">
        <string notr="true">buttonGroup</string>
@@ -316,12 +316,12 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>30</x>
      <y>280</y>
-     <width>231</width>
+     <width>254</width>
      <height>121</height>
     </rect>
    </property>
@@ -400,7 +400,7 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>30</x>
@@ -460,12 +460,12 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>440</x>
      <y>280</y>
-     <width>61</width>
+     <width>109</width>
      <height>111</height>
     </rect>
    </property>
@@ -505,12 +505,12 @@
     </item>
    </layout>
   </widget>
-  <widget class="QWidget" name="">
+  <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
      <x>310</x>
      <y>280</y>
-     <width>91</width>
+     <width>94</width>
      <height>111</height>
     </rect>
    </property>

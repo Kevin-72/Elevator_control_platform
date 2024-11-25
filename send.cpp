@@ -11,7 +11,7 @@ void Widget::onResponseTimeout() {
         appendLog("Error: 等待心跳超时，禁止操作面板，直至心跳恢复！请检查模组连接是否出现异常。", Qt::red);
         setEnabledMy(false);    
     }
-    responseTimeoutTimer->stop();  // 停止超时定时器
+    // responseTimeoutTimer->stop();  // 停止超时定时器
     isReceiving = false;  // 重置接收标志
     waitingForHeartbeat = false;
     waitingForResponse = false;  // 重置等待标志
@@ -46,6 +46,7 @@ void Widget::sendSerialData(const QByteArray &data) {
 
     // 启动响应超时定时器
     responseTimeoutTimer->start(RESPONSETIMEOUTTIMESET);  // 设置超时为 200 毫秒
+    receiverThread->start();
 }
 
 // 模拟发送协议帧
@@ -108,47 +109,7 @@ void Widget::on_stopBt_clicked()
 }
 
 
-void Widget::on_mode01Bt_clicked()
-{
-     serialPort->write("MODE=01\r\n");
-    appendLog("启动模式1");
-}
 
-void Widget::on_mode01Bt_rightClicked()
-{
-    appendLog("右键点击模式1按钮", Qt::blue);
-    serialPort->write("MODE=01 RIGHT CLICK\r\n");
-    openOrCreateFile("mode1.txt");
-}
-
-void Widget::on_mode02Bt_clicked()
-{
-     serialPort->write("MODE=02\r\n");
-    appendLog("启动模式2");
-}
-
-void Widget::on_mode03Bt_clicked()
-{
-     serialPort->write("MODE=03\r\n");
-    appendLog("启动模式3");
-}
-
-void Widget::on_mode04Bt_clicked()
-{
-     serialPort->write("MODE=04\r\n");
-    appendLog("启动模式4");
-}
-
-void Widget::on_mode05Bt_clicked()
-{
-     serialPort->write("MODE=05\r\n");
-    appendLog("启动模式5");
-}
-
-void Widget::on_mode06Bt_clicked()
-{
-    appendLog("启动模式6");
-}
 
 void Widget::on_openBt_clicked()
 {

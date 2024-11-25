@@ -6,6 +6,7 @@
 void Widget::readSerialData()
 {
     if (isReceiving) {
+        appendLog("当前正在接收数据....禁止重复接收", Qt::red);
         return;  // 如果当前正在接收数据，跳过
     }
 
@@ -84,8 +85,6 @@ void Widget::receiveFrames(std::vector<uint8_t>& buffer) {
                 case HEARTBEAT:
                     appendLog("Heartbeat successfully.", Qt::green);
                     heartbeatHandle(responseFrame.data);
-                    waitingForHeartbeat = false;
-                    waitingForResponse = false;  // 重置等待标志
                     break;
                 case MCU_RESPONSE:
                     appendLog("Response successfully.", Qt::green);
