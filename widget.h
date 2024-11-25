@@ -23,6 +23,16 @@
 #include <QFileInfo>
 #include <QProcess>
 #include <QStandardPaths>
+#include <QDialog>
+#include <QTableWidget>
+#include <QPushButton>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QTextStream>
+#include <QHeaderView>
+#include <QLabel>
+#include <QLineEdit>
+#include <QIntValidator>
 
 
 #include "protocol.h"
@@ -43,9 +53,9 @@ public:
     Widget(QWidget *parent = nullptr);
     ~Widget();
 
-    void openOrCreateFile(const QString &fileName);
+    void openOrCreateTable(const QString &fileName);
+    void execOrCreateTable(const QString &fileName);
     bool eventFilter(QObject *watched, QEvent *event);
-
     void appendLog(const QString &text, const QColor &color = Qt::black);
 
     // 添加新的成员函数用于发送串口数据
@@ -82,10 +92,15 @@ private slots:
     void on_mode01Bt_clicked();
     void on_mode01Bt_rightClicked();
     void on_mode02Bt_clicked();
+    void on_mode02Bt_rightClicked();
     void on_mode03Bt_clicked();
+    void on_mode03Bt_rightClicked();
     void on_mode04Bt_clicked();
+    void on_mode04Bt_rightClicked();
     void on_mode05Bt_clicked();
+    void on_mode05Bt_rightClicked();
     void on_mode06Bt_clicked();
+    void on_mode06Bt_rightClicked();
 
     void on_openBt_clicked();
 //    void on_closeBt_clicked();
@@ -126,6 +141,34 @@ private:
 
     int maxChannelNumber = 0;
     int channelNumber = 0;
+};
+
+
+
+class TableEditor : public QDialog {
+    Q_OBJECT
+
+public:
+    TableEditor(const QString &filePath, QWidget *parent = nullptr);
+
+    ~TableEditor();
+
+    void printTableDataToLog(Widget *logWidget);
+    void loadTableData();
+
+    void saveTableData();
+    bool validateTableData(Widget *logWidget);
+
+private slots:
+    void addRow();
+
+private:
+    QString filePath;
+    QTableWidget *tableWidget;
+    QLineEdit *loopEdit;
+    int loop_count;
+
+
 };
 
 

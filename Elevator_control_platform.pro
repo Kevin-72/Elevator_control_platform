@@ -10,6 +10,7 @@ CONFIG += c++11
 
 SOURCES += \
     main.cpp \
+    mode.cpp \
     protocol.cpp \
     receive.cpp \
     send.cpp \
