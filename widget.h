@@ -83,6 +83,13 @@ public:
     void startHeartbeatThread();
     void sendHeartbeat();
 
+
+    uint8_t A_F_Flag = 0x11;
+    bool switchStatus = false;
+
+    int maxChannelNumber = 0;
+    int channelNumber = 0;
+
 private slots:
     void on_openSerialBt_clicked();
     void on_btnSerialCheck_clicked();
@@ -132,15 +139,10 @@ private:
     QByteArray lastSentData;  // 记录上次发送的数据
     QTimer *responseTimeoutTimer;  // 响应超时定时器
 
-    uint8_t A_F_Flag = 0x11;
-
     bool accessRev = false;      // accessRev为false时正在处理接收数据，此时禁止发送通道数据
     bool serialCount = false;
     bool selectSerial = false;
-    bool switchStatus = false;
 
-    int maxChannelNumber = 0;
-    int channelNumber = 0;
 };
 
 
@@ -154,6 +156,7 @@ public:
     ~TableEditor();
 
     void printTableDataToLog(Widget *logWidget);
+    void TableEditor::sendTableData(Widget *logWidget);
     void loadTableData();
 
     void saveTableData();

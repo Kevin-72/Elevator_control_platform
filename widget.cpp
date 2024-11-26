@@ -31,7 +31,7 @@ Widget::Widget(QWidget *parent)
     // 启动心跳检测线程
     startHeartbeatThread();
 
-    ui->openBt->setText("None");
+    ui->openBt->setText("开关");
 
     // 安装事件过滤器
     ui->mode01Bt->installEventFilter(this);

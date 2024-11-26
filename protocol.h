@@ -170,6 +170,11 @@ static const std::unordered_map<DevCtrlValue, QString> DevCtrlValueMap = {
     {DevCtrlValue::DevCtrl_STOP, "STOP"},
     {DevCtrlValue::DevCtrl_DOWN, "DOWN"}
 };
+static const std::unordered_map<QString, DevCtrlValueMap> StringDevCtrlValueMap = {
+    {"UP"  , DevCtrlValue::DevCtrl_UP},
+    {"STOP", DevCtrlValue::DevCtrl_STOP},
+    {"DOWN", DevCtrlValue::DevCtrl_DOWN}
+};
 
 // 定义A/F通道类型值
 enum class AFSelectValue : uint8_t {
