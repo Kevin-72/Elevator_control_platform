@@ -54,7 +54,7 @@ public:
     ~Widget();
 
     void openOrCreateTable(const QString &fileName);
-    void execOrCreateTable(const QString &fileName);
+    void execOrCreateTable(const QString &fileName, std::function<void()> pFun_rightClicked);
     bool eventFilter(QObject *watched, QEvent *event);
     void appendLog(const QString &text, const QColor &color = Qt::black);
 
@@ -90,6 +90,8 @@ public:
     int maxChannelNumber = 0;
     int channelNumber = 0;
 
+    bool stopRequested = false;
+
 private slots:
     void on_openSerialBt_clicked();
     void on_btnSerialCheck_clicked();
@@ -97,17 +99,17 @@ private slots:
     void on_downBt_pressed();
     void on_stopBt_clicked();
     void on_mode01Bt_clicked();
-    void on_mode01Bt_rightClicked();
+    void mode01Bt_rightClicked();
     void on_mode02Bt_clicked();
-    void on_mode02Bt_rightClicked();
+    void mode02Bt_rightClicked();
     void on_mode03Bt_clicked();
-    void on_mode03Bt_rightClicked();
+    void mode03Bt_rightClicked();
     void on_mode04Bt_clicked();
-    void on_mode04Bt_rightClicked();
+    void mode04Bt_rightClicked();
     void on_mode05Bt_clicked();
-    void on_mode05Bt_rightClicked();
+    void mode05Bt_rightClicked();
     void on_mode06Bt_clicked();
-    void on_mode06Bt_rightClicked();
+    void mode06Bt_rightClicked();
 
     void on_openBt_clicked();
 //    void on_closeBt_clicked();
@@ -156,7 +158,7 @@ public:
     ~TableEditor();
 
     void printTableDataToLog(Widget *logWidget);
-    void TableEditor::sendTableData(Widget *logWidget);
+    void sendTableData(Widget *logWidget);
     void loadTableData();
 
     void saveTableData();
