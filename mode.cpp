@@ -261,16 +261,70 @@ void Widget::execOrCreateTable(const QString &fileName) {
     // 打开或创建表格编辑窗口
     TableEditor editor(filePath, this);
     if (editor.validateTableData(this)) {
+        QMessageBox::critical(this, "错误提示", "表格数据错误！\r\n请修改后重新运行");
         on_mode01Bt_rightClicked();
     }
     else {
         editor.printTableDataToLog(this);
+        editor.sendTableData(this);
     }
 
 }
 
+void TableEditor::sendTableData(Widget *logWidget) {
+    std::vector<uint8_t> allStatusData(8);
 
+    for (int loop = 0; loop < loop_count; ++loop) {
+        // 遍历每一行
+        for (int row = 0; row < tableWidget->rowCount(); ++row) {
+            // 1、开关状态
+            allStatusData[offset_OFF_ON] = switchStatus ?  static_cast<uint8_t>(SwitchValue::SWITCH_OFF) : static_cast<uint8_t>(SwitchValue::SWITCH_ON);
 
+            // 2、通道
+            QString valueAccess = tableWidget->item(row, 0)->text();
+            auto it = StringAccessValueMap.find(valueAccess.toStdString());
+            if (it != StringAccessValueMap.end()) {
+                allStatusData[offset_ACCESS_SELECT] = it->second;
+            } else {
+                QMessageBox::critical(this, "错误提示", "表格内出现非通道字字段！！！\r\n");
+                logWidget->appendLog("Error: 表格内出现非通道字段！！！.", Qt::red);
+                return; // 或者执行其他错误处理逻辑
+            }
+
+            // 3、最大频道值
+            allStatusData[offset_MAXCHANNEL] = (logWidget->maxChannelNumber >> 8) & 0xFF;  // 高字节
+            allStatusData[offset_MAXCHANNEL + 1] = logWidget->maxChannelNumber & 0xFF;         // 低字节
+
+            // 4、频道值
+            uint32_t valueChannel = tableWidget->item(row, 1)->text().toInt();
+            allStatusData[offset_CHANNEL] = (valueChannel >> 8) & 0xFF;  // 高字节
+            allStatusData[offset_CHANNEL + 1] = valueChannel & 0xFF;         // 低字节
+            
+            // 5、设备控制
+            QString valueCtrl = tableWidget->item(row, 2)->text();
+            auto it = StringDevCtrlValueMap.find(valueCtrl);
+            if (it != StringDevCtrlValueMap.end()) {
+                allStatusData[offset_POSITION_CONTROL] = it->second;
+            } else {
+                QMessageBox::critical(this, "错误提示", "表格内出现非设备控制字段！！！\r\n");
+                logWidget->appendLog("Error: 表格内出现非设备控制字段！！！.", Qt::red);
+                return; // 或者执行其他错误处理逻辑
+            }
+
+            // 6、A/F状态
+            allStatusData[offset_A_F_SELECT] = A_F_Flag;
+
+            // 发送allStatus
+            logWidget->appendLog("发送allStatus");
+            ProtocolFrame allStatusDataFrame = createDeviceControlFrame(DPType::ALL_STATUS, allStatusData);
+            sendFrame(allStatusDataFrame);
+
+            // 延时
+            uint32_t delayTime = tableWidget->item(row, 3)->text().toInt();
+            QThread::sleep(delayTime);
+        }
+    }
+}
 
 
 bool Widget::eventFilter(QObject *watched, QEvent *event)
@@ -299,70 +353,66 @@ bool Widget::eventFilter(QObject *watched, QEvent *event)
 
 void Widget::on_mode01Bt_clicked()
 {
-//     serialPort->write("MODE=01\r\n");
     appendLog("启动模式1");
-    // 获取用户文档目录路径
     execOrCreateTable("mode01.data");
 }
 void Widget::on_mode01Bt_rightClicked()
 {
-    appendLog("右键点击模式1按钮", Qt::blue);
+    appendLog("编辑模式1", Qt::blue);
     openOrCreateTable("mode01.data");
 }
 
-
 void Widget::on_mode02Bt_clicked()
 {
-//     serialPort->write("MODE=02\r\n");
     appendLog("启动模式2");
+    execOrCreateTable("mode02.data");
 }
 void Widget::on_mode02Bt_rightClicked()
 {
-    appendLog("右键点击模式2按钮", Qt::blue);
-    openOrCreateTable("mode2.data");
+    appendLog("编辑模式2", Qt::blue);
+    openOrCreateTable("mode02.data");
 }
 
 void Widget::on_mode03Bt_clicked()
 {
-//     serialPort->write("MODE=03\r\n");
     appendLog("启动模式3");
+    execOrCreateTable("mode03.data");
 }
 void Widget::on_mode03Bt_rightClicked()
 {
-    appendLog("右键点击模式3按钮", Qt::blue);
-    openOrCreateTable("mode3.data");
+    appendLog("编辑模式3", Qt::blue);
+    openOrCreateTable("mode03.data");
 }
 
 void Widget::on_mode04Bt_clicked()
 {
-//     serialPort->write("MODE=04\r\n");
     appendLog("启动模式4");
+    execOrCreateTable("mode04.data");
 }
 void Widget::on_mode04Bt_rightClicked()
 {
-    appendLog("右键点击模式4按钮", Qt::blue);
-    openOrCreateTable("mode4.data");
+    appendLog("编辑模式4", Qt::blue);
+    openOrCreateTable("mode04.data");
 }
 
 void Widget::on_mode05Bt_clicked()
 {
-//     serialPort->write("MODE=05\r\n");
     appendLog("启动模式5");
+    execOrCreateTable("mode05.data");
 }
 void Widget::on_mode05Bt_rightClicked()
 {
-    appendLog("右键点击模式5按钮", Qt::blue);
-    openOrCreateTable("mode5.data");
+    appendLog("编辑模式5", Qt::blue);
+    openOrCreateTable("mode05.data");
 }
 
 void Widget::on_mode06Bt_clicked()
 {
     appendLog("启动模式6");
+    execOrCreateTable("mode06.data");
 }
 void Widget::on_mode06Bt_rightClicked()
 {
-    appendLog("右键点击模式6按钮", Qt::blue);
-    openOrCreateTable("mode6.data");
+    appendLog("编辑模式6", Qt::blue);
+    openOrCreateTable("mode06.data");
 }
-
-
