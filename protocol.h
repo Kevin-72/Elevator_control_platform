@@ -12,7 +12,7 @@
 
 using namespace std;
 
-#define HEARTBEATTIMESET 10000     // 心跳间隔时间
+#define HEARTBEATTIMESET 9500     // 心跳间隔时间
 #define RESPONSETIMEOUTTIMESET  500      // 响应超时时间设置
 #define offset_BASE             4
 #define offset_OFF_ON           0
@@ -170,7 +170,7 @@ static const std::unordered_map<DevCtrlValue, QString> DevCtrlValueMap = {
     {DevCtrlValue::DevCtrl_STOP, "STOP"},
     {DevCtrlValue::DevCtrl_DOWN, "DOWN"}
 };
-static const std::unordered_map<QString, DevCtrlValueMap> StringDevCtrlValueMap = {
+static const std::unordered_map<std::string, DevCtrlValue> StringDevCtrlValueMap = {
     {"UP"  , DevCtrlValue::DevCtrl_UP},
     {"STOP", DevCtrlValue::DevCtrl_STOP},
     {"DOWN", DevCtrlValue::DevCtrl_DOWN}

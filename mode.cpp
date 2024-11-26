@@ -4,6 +4,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <functional>
 
 #include <QTableWidget>
 #include <QDir>
@@ -147,22 +148,28 @@ void TableEditor::saveTableData() {
     }
 
     QFile file(filePath);
-    // 打开文件，如果文件不存在则创建
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+    // 打开文件，覆盖原内容
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text | QIODevice::Truncate)) {
         QMessageBox::warning(this, "Error", "无法保存文件：" + filePath + "\n错误信息: " + file.errorString());
         return;
     }
 
     QTextStream out(&file);
-    // 保存表格数据
+    // 保存表格数据，删除空行
     for (int row = 0; row < tableWidget->rowCount(); ++row) {
         QStringList rowData;
+        bool isEmptyRow = true;
         for (int col = 0; col < tableWidget->columnCount(); ++col) {
             QTableWidgetItem *item = tableWidget->item(row, col);
             QString cellData = item ? item->text().trimmed() : ""; // 去除空格
-            rowData.append(item ? item->text() : "");
+            if (!cellData.isEmpty()) {
+                isEmptyRow = false; // 只要有一个单元格不为空，认为该行不是空行
+            }
+            rowData.append(cellData);
         }
-        out << rowData.join(",") << "\n";
+        if (!isEmptyRow) {
+            out << rowData.join(",") << "\n"; // 保存非空行
+        }
     }
 
     // 保存循环次数
@@ -172,11 +179,26 @@ void TableEditor::saveTableData() {
     file.close();
 }
 
+
 bool TableEditor::validateTableData(Widget *logWidget) {
     bool hasError = false;
 
     // 遍历每一行
     for (int row = 0; row < tableWidget->rowCount(); ++row) {
+        int emptyCount = 0;
+
+        // 检查该行的每一列是否为空
+        for (int col = 0; col < 4; ++col) {
+            if (tableWidget->item(row, col) == nullptr || tableWidget->item(row, col)->text().trimmed().isEmpty()) {
+                emptyCount++;
+            }
+        }
+        // 如果某行的空单元格数量大于 1，则记录日志并返回
+        if (emptyCount > 1) {
+            logWidget->appendLog("错误：第" + QString::number(row + 1) + "行中有超过一个单元格为空!");
+            return true;  // 表示验证失败
+        }
+
         // 检查第一列和第三列是否非空
         if (tableWidget->item(row, 0) == nullptr || tableWidget->item(row, 2) == nullptr) {
             logWidget->appendLog("错误：第" + QString::number(row + 1) + "行的第一列或第三列为空!");
@@ -191,6 +213,37 @@ bool TableEditor::validateTableData(Widget *logWidget) {
                                  "\" 不是有效的 StringAccessValueMap 键!");
             hasError = true;
         }
+        if (logWidget->A_F_Flag == static_cast<uint8_t>(AFSelectValue::AFSelect_A)) {
+            // 检查 firstColValue 是否在 ADAccessValueMap 的值中
+            bool isValidADAccessValue = false;
+            for (const auto& pair : ADAccessValueMap) {
+                if (pair.second == firstColValue) {  // 比较 QString 值
+                    isValidADAccessValue = true;
+                    break;
+                }
+            }
+
+            if (!isValidADAccessValue) {
+                logWidget->appendLog("错误：第一列数据 \"" + firstColValue + "\" 不是此上位机的值!");
+                return true; // 验证失败
+            }
+        }
+        else if (logWidget->A_F_Flag == static_cast<uint8_t>(AFSelectValue::AFSelect_F)) {
+            // 检查 firstColValue 是否在 FAccessValueMap 的值中
+            bool isValidFAccessValue = false;
+            for (const auto& pair : FAccessValueMap) {
+                if (pair.second == firstColValue) {  // 比较 QString 值
+                    isValidFAccessValue = true;
+                    break;  // 找到匹配值后直接退出循环
+                }
+            }
+
+            if (!isValidFAccessValue) {
+                logWidget->appendLog("错误：第一列数据 \"" + firstColValue + "\" 不是此上位机的值!");
+                return true; // 验证失败
+            }
+        }
+
 
         // 获取第三列的数据，并检查是否为 DevCtrlValueMap 中的键
         QString thirdColValue = tableWidget->item(row, 2)->text().trimmed();
@@ -251,7 +304,7 @@ void Widget::openOrCreateTable(const QString &fileName) {
     editor.exec(); // 模态显示窗口
 }
 
-void Widget::execOrCreateTable(const QString &fileName) {
+void Widget::execOrCreateTable(const QString &fileName, std::function<void()> pFun_rightClicked) {
     // 获取用户文档目录路径
     QString documentsDir = QStandardPaths::writableLocation(QStandardPaths::DocumentsLocation);
 
@@ -262,7 +315,7 @@ void Widget::execOrCreateTable(const QString &fileName) {
     TableEditor editor(filePath, this);
     if (editor.validateTableData(this)) {
         QMessageBox::critical(this, "错误提示", "表格数据错误！\r\n请修改后重新运行");
-        on_mode01Bt_rightClicked();
+        pFun_rightClicked();
     }
     else {
         editor.printTableDataToLog(this);
@@ -272,58 +325,84 @@ void Widget::execOrCreateTable(const QString &fileName) {
 }
 
 void TableEditor::sendTableData(Widget *logWidget) {
+    logWidget->stopRequested = false; // 每次开始执行时重置
     std::vector<uint8_t> allStatusData(8);
-
     for (int loop = 0; loop < loop_count; ++loop) {
+        if (logWidget->stopRequested) {
+            logWidget->appendLog("发送操作已被停止。", Qt::gray);
+            return; // 提前退出函数
+        }
         // 遍历每一行
         for (int row = 0; row < tableWidget->rowCount(); ++row) {
-            // 1、开关状态
-            allStatusData[offset_OFF_ON] = switchStatus ?  static_cast<uint8_t>(SwitchValue::SWITCH_OFF) : static_cast<uint8_t>(SwitchValue::SWITCH_ON);
+            try {
+                if (logWidget->stopRequested) {
+                    logWidget->appendLog("发送操作已被停止。", Qt::gray);
+                    return; // 提前退出函数
+                }
+                // 1、开关状态
+                allStatusData[offset_OFF_ON] = logWidget->switchStatus
+                                                   ? static_cast<uint8_t>(SwitchValue::SWITCH_OFF)
+                                                   : static_cast<uint8_t>(SwitchValue::SWITCH_ON);
 
-            // 2、通道
-            QString valueAccess = tableWidget->item(row, 0)->text();
-            auto it = StringAccessValueMap.find(valueAccess.toStdString());
-            if (it != StringAccessValueMap.end()) {
-                allStatusData[offset_ACCESS_SELECT] = it->second;
-            } else {
-                QMessageBox::critical(this, "错误提示", "表格内出现非通道字字段！！！\r\n");
-                logWidget->appendLog("Error: 表格内出现非通道字段！！！.", Qt::red);
-                return; // 或者执行其他错误处理逻辑
+                // 2、通道
+                QString valueAccess = tableWidget->item(row, 0)->text();
+                if (valueAccess.isEmpty()) throw std::runtime_error("通道字段为空！");
+                auto it = StringAccessValueMap.find(valueAccess.toStdString());
+                if (it != StringAccessValueMap.end()) {
+                    allStatusData[offset_ACCESS_SELECT] = it->second;
+                } else {
+                    throw std::runtime_error("表格内出现非通道字字段！");
+                }
+
+                // 3、最大频道值
+                allStatusData[offset_MAXCHANNEL] = (logWidget->maxChannelNumber >> 8) & 0xFF;  // 高字节
+                allStatusData[offset_MAXCHANNEL + 1] = logWidget->maxChannelNumber & 0xFF;    // 低字节
+
+                // 4、频道值
+                QString channelText = tableWidget->item(row, 1)->text();
+                if (channelText.isEmpty()) throw std::runtime_error("频道值为空！");
+                uint32_t valueChannel = channelText.toInt();
+                allStatusData[offset_CHANNEL] = (valueChannel >> 8) & 0xFF;  // 高字节
+                allStatusData[offset_CHANNEL + 1] = valueChannel & 0xFF;     // 低字节
+
+                // 5、设备控制
+                QString valueCtrl = tableWidget->item(row, 2)->text();
+                if (valueCtrl.isEmpty()) throw std::runtime_error("设备控制字段为空！");
+                auto its = StringDevCtrlValueMap.find(valueCtrl.toStdString());
+                if (its != StringDevCtrlValueMap.end()) {
+                    allStatusData[offset_POSITION_CONTROL] = static_cast<uint8_t>(its->second);
+                } else {
+                    throw std::runtime_error("表格内出现非设备控制字段！");
+                }
+
+                // 6、A/F状态
+                allStatusData[offset_A_F_SELECT] = logWidget->A_F_Flag;
+
+                // 发送 allStatus
+                logWidget->appendLog(QString("发送 allStatus: Row %1").arg(row));
+                ProtocolFrame allStatusDataFrame = createDeviceControlFrame(DPType::ALL_STATUS, allStatusData);
+                logWidget->sendFrame(allStatusDataFrame);
+
+                // 延时（非阻塞）
+                QString delayText = tableWidget->item(row, 3)->text();
+                if (delayText.isEmpty()) throw std::runtime_error("延时时间为空！");
+                uint32_t delayTime = delayText.toUInt();
+                QEventLoop loop;
+                QTimer::singleShot(delayTime * 1000, &loop, &QEventLoop::quit);
+                loop.exec();
+
+                if (logWidget->stopRequested) {
+                    logWidget->appendLog("发送操作已被停止。", Qt::gray);
+                    return; // 提前退出函数
+                }
+            } catch (const std::runtime_error &e) {
+                QMessageBox::critical(this, "错误提示", QString("行 %1: %2").arg(row).arg(e.what()));
+                logWidget->appendLog(QString("Error (Row %1): %2").arg(row).arg(e.what()), Qt::red);
+                return; // 停止发送
             }
-
-            // 3、最大频道值
-            allStatusData[offset_MAXCHANNEL] = (logWidget->maxChannelNumber >> 8) & 0xFF;  // 高字节
-            allStatusData[offset_MAXCHANNEL + 1] = logWidget->maxChannelNumber & 0xFF;         // 低字节
-
-            // 4、频道值
-            uint32_t valueChannel = tableWidget->item(row, 1)->text().toInt();
-            allStatusData[offset_CHANNEL] = (valueChannel >> 8) & 0xFF;  // 高字节
-            allStatusData[offset_CHANNEL + 1] = valueChannel & 0xFF;         // 低字节
-            
-            // 5、设备控制
-            QString valueCtrl = tableWidget->item(row, 2)->text();
-            auto it = StringDevCtrlValueMap.find(valueCtrl);
-            if (it != StringDevCtrlValueMap.end()) {
-                allStatusData[offset_POSITION_CONTROL] = it->second;
-            } else {
-                QMessageBox::critical(this, "错误提示", "表格内出现非设备控制字段！！！\r\n");
-                logWidget->appendLog("Error: 表格内出现非设备控制字段！！！.", Qt::red);
-                return; // 或者执行其他错误处理逻辑
-            }
-
-            // 6、A/F状态
-            allStatusData[offset_A_F_SELECT] = A_F_Flag;
-
-            // 发送allStatus
-            logWidget->appendLog("发送allStatus");
-            ProtocolFrame allStatusDataFrame = createDeviceControlFrame(DPType::ALL_STATUS, allStatusData);
-            sendFrame(allStatusDataFrame);
-
-            // 延时
-            uint32_t delayTime = tableWidget->item(row, 3)->text().toInt();
-            QThread::sleep(delayTime);
         }
     }
+    logWidget->appendLog("发送模式结束。", Qt::gray);
 }
 
 
@@ -333,17 +412,17 @@ bool Widget::eventFilter(QObject *watched, QEvent *event)
         QMouseEvent *mouseEvent = static_cast<QMouseEvent *>(event);
         if (mouseEvent->button() == Qt::RightButton) {
             if (watched == ui->mode01Bt) {
-                on_mode01Bt_rightClicked();
+                mode01Bt_rightClicked();
             } else if (watched == ui->mode02Bt) {
-                on_mode02Bt_rightClicked();
+                mode02Bt_rightClicked();
             } else if (watched == ui->mode03Bt) {
-                on_mode03Bt_rightClicked();
+                mode03Bt_rightClicked();
             } else if (watched == ui->mode04Bt) {
-                on_mode04Bt_rightClicked();
+                mode04Bt_rightClicked();
             } else if (watched == ui->mode05Bt) {
-                on_mode05Bt_rightClicked();
+                mode05Bt_rightClicked();
             } else if (watched == ui->mode06Bt) {
-                on_mode06Bt_rightClicked();
+                mode06Bt_rightClicked();
             }
             return true;  // 事件已处理
         }
@@ -354,9 +433,9 @@ bool Widget::eventFilter(QObject *watched, QEvent *event)
 void Widget::on_mode01Bt_clicked()
 {
     appendLog("启动模式1");
-    execOrCreateTable("mode01.data");
+    execOrCreateTable("mode01.data", [this]() { mode01Bt_rightClicked(); });
 }
-void Widget::on_mode01Bt_rightClicked()
+void Widget::mode01Bt_rightClicked()
 {
     appendLog("编辑模式1", Qt::blue);
     openOrCreateTable("mode01.data");
@@ -365,9 +444,9 @@ void Widget::on_mode01Bt_rightClicked()
 void Widget::on_mode02Bt_clicked()
 {
     appendLog("启动模式2");
-    execOrCreateTable("mode02.data");
+    execOrCreateTable("mode02.data", [this]() { mode02Bt_rightClicked(); });
 }
-void Widget::on_mode02Bt_rightClicked()
+void Widget::mode02Bt_rightClicked()
 {
     appendLog("编辑模式2", Qt::blue);
     openOrCreateTable("mode02.data");
@@ -376,9 +455,9 @@ void Widget::on_mode02Bt_rightClicked()
 void Widget::on_mode03Bt_clicked()
 {
     appendLog("启动模式3");
-    execOrCreateTable("mode03.data");
+    execOrCreateTable("mode03.data", [this]() { mode03Bt_rightClicked(); });
 }
-void Widget::on_mode03Bt_rightClicked()
+void Widget::mode03Bt_rightClicked()
 {
     appendLog("编辑模式3", Qt::blue);
     openOrCreateTable("mode03.data");
@@ -387,9 +466,9 @@ void Widget::on_mode03Bt_rightClicked()
 void Widget::on_mode04Bt_clicked()
 {
     appendLog("启动模式4");
-    execOrCreateTable("mode04.data");
+    execOrCreateTable("mode04.data", [this]() { mode04Bt_rightClicked(); });
 }
-void Widget::on_mode04Bt_rightClicked()
+void Widget::mode04Bt_rightClicked()
 {
     appendLog("编辑模式4", Qt::blue);
     openOrCreateTable("mode04.data");
@@ -398,9 +477,9 @@ void Widget::on_mode04Bt_rightClicked()
 void Widget::on_mode05Bt_clicked()
 {
     appendLog("启动模式5");
-    execOrCreateTable("mode05.data");
+    execOrCreateTable("mode05.data", [this]() { mode05Bt_rightClicked(); });
 }
-void Widget::on_mode05Bt_rightClicked()
+void Widget::mode05Bt_rightClicked()
 {
     appendLog("编辑模式5", Qt::blue);
     openOrCreateTable("mode05.data");
@@ -409,9 +488,9 @@ void Widget::on_mode05Bt_rightClicked()
 void Widget::on_mode06Bt_clicked()
 {
     appendLog("启动模式6");
-    execOrCreateTable("mode06.data");
+    execOrCreateTable("mode06.data", [this]() { mode06Bt_rightClicked(); });
 }
-void Widget::on_mode06Bt_rightClicked()
+void Widget::mode06Bt_rightClicked()
 {
     appendLog("编辑模式6", Qt::blue);
     openOrCreateTable("mode06.data");
