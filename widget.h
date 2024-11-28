@@ -143,7 +143,7 @@ private:
     QTimer *heartbeatTimer;    // 心跳定时器
     bool waitingForHeartbeat;  // 等待心跳响应标志
 
-    bool waitingForResponse;  // 等待响应标志
+    bool waitingForResponse = false;  // 等待响应标志
     QByteArray lastSentData;  // 记录上次发送的数据
     QTimer *responseTimeoutTimer;  // 响应超时定时器
 

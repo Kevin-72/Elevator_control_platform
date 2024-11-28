@@ -9,7 +9,7 @@ void Widget::onResponseTimeout() {
     if (waitingForHeartbeat)
     {
         appendLog("Error: 等待心跳超时，禁止操作面板，直至心跳恢复！请检查模组连接是否出现异常。", Qt::red);
-        setEnabledMy(false);    
+        setEnabledMy(false);
     }
     // responseTimeoutTimer->stop();  // 停止超时定时器
     isReceiving = false;  // 重置接收标志
@@ -94,6 +94,7 @@ void Widget::sendSerialData(const QByteArray &data) {
 
                 if (responseReceived) {
                     break;  // 如果收到响应，跳出循环
+                }
             }
 
             // 如果已经尝试了三次且仍未收到响应，则退出
@@ -127,7 +128,7 @@ void Widget::on_upBt_pressed()
     std::vector<uint8_t> data = {static_cast<uint8_t>(DevCtrlValue::DevCtrl_UP)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
     appendLog("发送上升指令");
-    sendFrame(dataFrame); 
+    sendFrame(dataFrame);
 }
 
 void Widget::on_downBt_pressed()
@@ -136,7 +137,7 @@ void Widget::on_downBt_pressed()
     std::vector<uint8_t> data = {static_cast<uint8_t>(DevCtrlValue::DevCtrl_DOWN)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
     appendLog("发送下降指令");
-    sendFrame(dataFrame); 
+    sendFrame(dataFrame);
 }
 
 void Widget::on_stopBt_clicked()
@@ -145,7 +146,7 @@ void Widget::on_stopBt_clicked()
     std::vector<uint8_t> data = {static_cast<uint8_t>(DevCtrlValue::DevCtrl_STOP)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
     appendLog("发送停止指令");
-    sendFrame(dataFrame); 
+    sendFrame(dataFrame);
 }
 
 
@@ -276,5 +277,5 @@ void Widget::sendReset()
 
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::ALL_STATUS, allStatusData);
     appendLog("发送所有设备复位指令", Qt::blue);
-    sendFrame(dataFrame); 
+    sendFrame(dataFrame);
 }
