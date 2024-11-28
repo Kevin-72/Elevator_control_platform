@@ -326,18 +326,13 @@ void Widget::execOrCreateTable(const QString &fileName, std::function<void()> pF
 }
 
 void TableEditor::sendTableData(Widget *logWidget) {
-    if (!logWidget->stopRequested) {
-        logWidget->appendLog("当前正在执行其它模式.......请停止当前模式后重试", Qt::red);
-        QMessageBox::critical(this, "错误提示", "当前正在执行其它模式.......请停止当前模式后重试");
-        return; // 提前退出函数
-    }
-
     logWidget->stopRequested = false; // 每次开始执行时重置
     std::vector<uint8_t> allStatusData(8);
     for (int loop = 0; loop < loop_count; ++loop) {
         if (logWidget->stopRequested) {
             logWidget->appendLog("发送操作模式已被停止。", Qt::gray);
             logWidget->sendReset();
+            logWidget->setColor();
             return; // 提前退出函数
         }
         // 遍历每一行
@@ -346,6 +341,7 @@ void TableEditor::sendTableData(Widget *logWidget) {
                 if (logWidget->stopRequested) {
                     logWidget->appendLog("发送操作模式已被停止。", Qt::gray);
                     logWidget->sendReset();
+                    logWidget->setColor();
                     return; // 提前退出函数
                 }
                 // 1、开关状态
@@ -403,16 +399,19 @@ void TableEditor::sendTableData(Widget *logWidget) {
                 if (logWidget->stopRequested) {
                     logWidget->appendLog("发送操作模式已被停止。", Qt::gray);
                     logWidget->sendReset();
+                    logWidget->setColor();
                     return; // 提前退出函数
                 }
             } catch (const std::runtime_error &e) {
                 QMessageBox::critical(this, "错误提示", QString("行 %1: %2").arg(row).arg(e.what()));
                 logWidget->appendLog(QString("Error (Row %1): %2").arg(row).arg(e.what()), Qt::red);
+                logWidget->setColor();
                 return; // 停止发送
             }
         }
     }
     logWidget->appendLog("发送模式结束。", Qt::gray);
+    logWidget->setColor();
     logWidget->stopRequested = true; // 每次模式执行结束时重置
 }
 
@@ -441,68 +440,167 @@ bool Widget::eventFilter(QObject *watched, QEvent *event)
     return QWidget::eventFilter(watched, event);  // 保留默认处理
 }
 
+void Widget::setColor(QPushButton *modeBt) {
+    if (nullptr == modeBt) {
+        ui->mode01Bt->setStyleSheet("background-color: lightgray;");
+        ui->mode02Bt->setStyleSheet("background-color: lightgray;");
+        ui->mode03Bt->setStyleSheet("background-color: lightgray;");
+        ui->mode04Bt->setStyleSheet("background-color: lightgray;");
+        ui->mode05Bt->setStyleSheet("background-color: lightgray;");
+        ui->mode06Bt->setStyleSheet("background-color: lightgray;");
+    }
+    else {
+        modeBt->setStyleSheet("background-color: lightgreen;");
+    }
+}
+
 void Widget::on_mode01Bt_clicked()
 {
-    appendLog("启动模式1");
-    execOrCreateTable("mode01.data", [this]() { mode01Bt_rightClicked(); });
+    if (ui->mode01Bt->styleSheet().contains("lightgreen")) {
+        ui->mode01Bt->setStyleSheet("background-color: lightgray;");
+        stopRequested = true;
+        appendLog("模式1已被主动停止！");
+    }
+    else {
+        if (!stopRequested) {
+            appendLog("当前正在执行其它模式.......请停止当前模式后重试", Qt::red);
+            QMessageBox::critical(this, "错误提示", "当前正在执行其它模式.......请停止当前模式后重试");
+            return; // 提前退出函数
+        }
+        setColor(ui->mode01Bt);
+        appendLog("启动模式1");
+        execOrCreateTable("mode01.data", [this]() { mode01Bt_rightClicked(); });
+    }
 }
 void Widget::mode01Bt_rightClicked()
 {
+    ui->mode01Bt->setStyleSheet("background-color: lightgray;");
     appendLog("编辑模式1", Qt::blue);
     openOrCreateTable("mode01.data");
 }
 
 void Widget::on_mode02Bt_clicked()
 {
-    appendLog("启动模式2");
-    execOrCreateTable("mode02.data", [this]() { mode02Bt_rightClicked(); });
+    if (ui->mode02Bt->styleSheet().contains("lightgreen")) {
+        ui->mode02Bt->setStyleSheet("background-color: lightgray;");
+        stopRequested = true;
+        appendLog("模式2已被主动停止！");
+    }
+    else {
+        if (!stopRequested) {
+            appendLog("当前正在执行其它模式.......请停止当前模式后重试", Qt::red);
+            QMessageBox::critical(this, "错误提示", "当前正在执行其它模式.......请停止当前模式后重试");
+            return;
+        }
+        setColor(ui->mode02Bt);
+        appendLog("启动模式2");
+        execOrCreateTable("mode02.data", [this]() { mode02Bt_rightClicked(); });
+    }
 }
 void Widget::mode02Bt_rightClicked()
 {
+    ui->mode02Bt->setStyleSheet("background-color: lightgray;");
     appendLog("编辑模式2", Qt::blue);
     openOrCreateTable("mode02.data");
 }
 
 void Widget::on_mode03Bt_clicked()
 {
-    appendLog("启动模式3");
-    execOrCreateTable("mode03.data", [this]() { mode03Bt_rightClicked(); });
+    if (ui->mode03Bt->styleSheet().contains("lightgreen")) {
+        ui->mode03Bt->setStyleSheet("background-color: lightgray;");
+        stopRequested = true;
+        appendLog("模式3已被主动停止！");
+    }
+    else {
+        if (!stopRequested) {
+            appendLog("当前正在执行其它模式.......请停止当前模式后重试", Qt::red);
+            QMessageBox::critical(this, "错误提示", "当前正在执行其它模式.......请停止当前模式后重试");
+            return;
+        }
+        setColor(ui->mode03Bt);
+        appendLog("启动模式3");
+        execOrCreateTable("mode03.data", [this]() { mode03Bt_rightClicked(); });
+    }
 }
 void Widget::mode03Bt_rightClicked()
 {
+    ui->mode03Bt->setStyleSheet("background-color: lightgray;");
     appendLog("编辑模式3", Qt::blue);
     openOrCreateTable("mode03.data");
 }
 
 void Widget::on_mode04Bt_clicked()
 {
-    appendLog("启动模式4");
-    execOrCreateTable("mode04.data", [this]() { mode04Bt_rightClicked(); });
+    if (ui->mode04Bt->styleSheet().contains("lightgreen")) {
+        ui->mode04Bt->setStyleSheet("background-color: lightgray;");
+        stopRequested = true;
+        appendLog("模式4已被主动停止！");
+    }
+    else {
+        if (!stopRequested) {
+            appendLog("当前正在执行其它模式.......请停止当前模式后重试", Qt::red);
+            QMessageBox::critical(this, "错误提示", "当前正在执行其它模式.......请停止当前模式后重试");
+            return;
+        }
+        setColor(ui->mode04Bt);
+        appendLog("启动模式4");
+        execOrCreateTable("mode04.data", [this]() { mode04Bt_rightClicked(); });
+    }
 }
 void Widget::mode04Bt_rightClicked()
 {
+    ui->mode04Bt->setStyleSheet("background-color: lightgray;");
     appendLog("编辑模式4", Qt::blue);
     openOrCreateTable("mode04.data");
 }
 
 void Widget::on_mode05Bt_clicked()
 {
-    appendLog("启动模式5");
-    execOrCreateTable("mode05.data", [this]() { mode05Bt_rightClicked(); });
+    if (ui->mode05Bt->styleSheet().contains("lightgreen")) {
+        ui->mode05Bt->setStyleSheet("background-color: lightgray;");
+        stopRequested = true;
+        appendLog("模式5已被主动停止！");
+    }
+    else {
+        if (!stopRequested) {
+            appendLog("当前正在执行其它模式.......请停止当前模式后重试", Qt::red);
+            QMessageBox::critical(this, "错误提示", "当前正在执行其它模式.......请停止当前模式后重试");
+            return;
+        }
+        setColor(ui->mode05Bt);
+        appendLog("启动模式5");
+        execOrCreateTable("mode05.data", [this]() { mode05Bt_rightClicked(); });
+    }
 }
 void Widget::mode05Bt_rightClicked()
 {
+    ui->mode05Bt->setStyleSheet("background-color: lightgray;");
     appendLog("编辑模式5", Qt::blue);
     openOrCreateTable("mode05.data");
 }
 
 void Widget::on_mode06Bt_clicked()
 {
-    appendLog("启动模式6");
-    execOrCreateTable("mode06.data", [this]() { mode06Bt_rightClicked(); });
+    if (ui->mode06Bt->styleSheet().contains("lightgreen")) {
+        ui->mode06Bt->setStyleSheet("background-color: lightgray;");
+        stopRequested = true;
+        appendLog("模式6已被主动停止！");
+    }
+    else {
+        if (!stopRequested) {
+            appendLog("当前正在执行其它模式.......请停止当前模式后重试", Qt::red);
+            QMessageBox::critical(this, "错误提示", "当前正在执行其它模式.......请停止当前模式后重试");
+            return;
+        }
+        setColor(ui->mode06Bt);
+        appendLog("启动模式6");
+        execOrCreateTable("mode06.data", [this]() { mode06Bt_rightClicked(); });
+    }
 }
 void Widget::mode06Bt_rightClicked()
 {
+    ui->mode06Bt->setStyleSheet("background-color: lightgray;");
     appendLog("编辑模式6", Qt::blue);
     openOrCreateTable("mode06.data");
 }
+

@@ -33,6 +33,8 @@ Widget::Widget(QWidget *parent)
 
     ui->openBt->setText("开关");
 
+    setColor();
+
     // 安装事件过滤器
     ui->mode01Bt->installEventFilter(this);
     ui->mode02Bt->installEventFilter(this);
@@ -76,7 +78,7 @@ Widget::~Widget()
 
 void Widget::appendLog(const QString &text, const QColor &color) {
     // 获取当前时间
-    QString currentTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+    QString currentTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss.zzz");
 
     // 格式化消息，加上时间戳
     QString formattedMessage = QString("[%1] %2").arg(currentTime, text);
@@ -251,6 +253,7 @@ void Widget::on_openSerialBt_clicked()
         // 模式复位
         stopRequested = true;
         sendReset();
+        setColor();
 
         serialPort->close();
         if (serialPort->isOpen()) {
