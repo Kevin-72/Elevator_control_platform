@@ -86,6 +86,8 @@ public:
     // 复位
     void sendReset();
 
+    void setColor(QPushButton *modeBt=nullptr);
+
 
     uint8_t A_F_Flag = 0x11;
     bool switchStatus = false;
