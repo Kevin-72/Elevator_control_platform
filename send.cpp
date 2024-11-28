@@ -30,14 +30,19 @@ void Widget::sendSerialData(const QByteArray &data) {
     }
 
     // 将发送逻辑异步调用到发送线程中
+
     QMetaObject::invokeMethod(this, [this, data]() {
         if (waitingForResponse) {
             appendLog("Warning: 上一条指令正在等待响应.正在排队等待发送......", Qt::red);
             QMutexLocker locker(&sendMutex); // 加锁等待
             appendLog("Warning: 上一条指令响应已经结束.正在发送......", Qt::green);
         }
-
-        QMutexLocker locker(&serialMutex); // 加锁
+        // 创建局部事件循环，用于等待响应
+        QEventLoop loop;
+        // 启动定时器监控超时
+        QTimer timeoutTimer;
+        {
+        QMutexLocker locker(&serialMutex);  // 确保线程安全
 
         // 显示发送的帧内容
         QString logMessage = "Sending Frame: ";
@@ -46,65 +51,62 @@ void Widget::sendSerialData(const QByteArray &data) {
         }
         appendLog(logMessage);
 
-        // 函数内的发送逻辑
-        auto sendData = [&]() {
-            if (serialPort->isOpen() && serialPort->isWritable()) {
-                serialPort->write(data);
-                serialPort->waitForBytesWritten();
-                appendLog("发送数据完成");
-                waitingForResponse = true;
-            } else {
-                appendLog("Error: Serial port not open or writable.", Qt::red);
-                waitingForResponse = false;
-            }
-        };
+        // 检查串口状态
+        if (!serialPort->isOpen() || !serialPort->isWritable()) {
+            appendLog("Error: Serial port not open or writable.", Qt::red);
+            return;
+        }
 
-        // 创建一个标志来跟踪响应是否收到
-        bool responseReceived = false;
+        // 写入数据到串口
+        serialPort->write(data);
+        serialPort->waitForBytesWritten();
+        appendLog("发送数据完成");
 
-        // 连接超时事件
-        connect(responseTimeoutTimer, &QTimer::timeout, this, [&]() {
-            if (waitingForResponse) {
-                appendLog("超时！没有收到响应，重试发送。", Qt::red);
-                waitingForResponse = false; // Reset the waiting flag to retry
-            }
+
+
+        // 连接信号，当接收到响应时退出事件循环
+        connect(this, &Widget::responseReceivedSignal, &loop, &QEventLoop::quit);
+
+
+        timeoutTimer.setSingleShot(true);
+        timeoutTimer.setInterval(RESPONSETIMEOUTTIMESET);  // 超时时间
+        connect(&timeoutTimer, &QTimer::timeout, &loop, [&]() {
+
+
+            loop.quit();  // 超时时退出事件循环
+
         });
 
-        // 尝试最多三次发送数据
-        for (int attempt = 1; attempt <= 3; ++attempt) {
-            if (!waitingForResponse) {
-                sendData();  // 发送数据
-                responseTimeoutTimer->start(RESPONSETIMEOUTTIMESET);  // 启动响应超时定时器
+        timeoutTimer.start();  // 启动定时器
+        }
 
-                // 通过一个局部变量来判断响应是否已收到
-                bool timeoutOccurred = false;
-                while (waitingForResponse && !timeoutOccurred) {
-                    QCoreApplication::processEvents();  // 处理事件，避免阻塞
+        appendLog("等待响应中...", Qt::blue);
 
-                    if (!waitingForResponse) {  // 如果收到响应
-                        responseReceived = true;
-                        appendLog("收到响应，发送成功！", Qt::green);
-                        break;
-                    }
+        // 阻塞当前线程，直到事件循环退出
+        loop.exec();
 
-                    if (!responseTimeoutTimer->isActive()) {
-                        timeoutOccurred = true;
-                    }
-                }
 
-                if (responseReceived) {
-                    break;  // 如果收到响应，跳出循环
-                }
+        // 检查是否超时
+        if (!timeoutTimer.isActive()) {
+            appendLog("Warning: 响应超时，没有收到数据。", Qt::red);
+            if (waitingForResponse) {
+                appendLog("Error: Response timeout.", Qt::red);
             }
-
-            // 如果已经尝试了三次且仍未收到响应，则退出
-            if (attempt == 3) {
-                appendLog("Error: 三次发送未收到响应，跳过此指令.", Qt::red);
-                waitingForResponse = false;
-                return;
+            if (waitingForHeartbeat)
+            {
+                appendLog("Error: 等待心跳超时，禁止操作面板，直至心跳恢复！请检查模组连接是否出现异常。", Qt::red);
+                setEnabledMy(false);
             }
-
-            appendLog(QString("Warning: 第%1次发送未收到响应，重试...").arg(attempt), Qt::red);
+            // responseTimeoutTimer->stop();  // 停止超时定时器
+            isReceiving = false;  // 重置接收标志
+            waitingForHeartbeat = false;
+            waitingForResponse = false;  // 重置等待标志
+            if (selectSerial) {
+                emit ui->openSerialBt->clicked();
+                QMessageBox::critical(this, "错误提示", "串口选择错误！\r\n请选择正确的串口");
+            }
+        } else {
+            appendLog("响应接收完成，继续发送下一条指令。", Qt::green);
         }
 
     }, Qt::QueuedConnection); // 使用队列连接，将方法调用放入线程事件循环

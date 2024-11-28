@@ -24,10 +24,10 @@ Widget::Widget(QWidget *parent)
 
     setEnabledMy(false);
 
-    // 连接响应超时定时器的 timeout 信号到 onResponseTimeout 槽函数
-    connect(responseTimeoutTimer, &QTimer::timeout, this, &Widget::onResponseTimeout);
-    // 设置响应超时定时器间隔
-    responseTimeoutTimer->setSingleShot(true);  // 设置为单次定时器
+//    // 连接响应超时定时器的 timeout 信号到 onResponseTimeout 槽函数
+//    connect(responseTimeoutTimer, &QTimer::timeout, this, &Widget::onResponseTimeout);
+//    // 设置响应超时定时器间隔
+//    responseTimeoutTimer->setSingleShot(true);  // 设置为单次定时器
 
     // 启动心跳检测线程
     startHeartbeatThread();

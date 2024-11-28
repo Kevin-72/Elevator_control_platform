@@ -97,6 +97,9 @@ public:
 
     bool stopRequested = true;
 
+signals:
+    void responseReceivedSignal(); // 声明信号，用于通知响应接收完成
+
 private slots:
     void on_openSerialBt_clicked();
     void on_btnSerialCheck_clicked();

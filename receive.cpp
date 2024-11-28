@@ -24,6 +24,9 @@ void Widget::readSerialData()
     // 处理接收到的帧数据
     std::vector<uint8_t> buffer(receivedData.begin(), receivedData.end());
     receiveFrames(buffer);
+
+    // 发射信号，通知发送线程继续
+    emit responseReceivedSignal();
 }
 
 
