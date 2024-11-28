@@ -325,18 +325,24 @@ void Widget::execOrCreateTable(const QString &fileName, std::function<void()> pF
 }
 
 void TableEditor::sendTableData(Widget *logWidget) {
+    if (!logWidget->stopRequested) {
+        logWidget->appendLog("当前正在执行其它模式.......请停止当前模式后重试", Qt::red);
+        QMessageBox::critical(this, "错误提示", "当前正在执行其它模式.......请停止当前模式后重试");
+        return; // 提前退出函数
+    }
+
     logWidget->stopRequested = false; // 每次开始执行时重置
     std::vector<uint8_t> allStatusData(8);
     for (int loop = 0; loop < loop_count; ++loop) {
         if (logWidget->stopRequested) {
-            logWidget->appendLog("发送操作已被停止。", Qt::gray);
+            logWidget->appendLog("发送操作模式已被停止。", Qt::gray);
             return; // 提前退出函数
         }
         // 遍历每一行
         for (int row = 0; row < tableWidget->rowCount(); ++row) {
             try {
                 if (logWidget->stopRequested) {
-                    logWidget->appendLog("发送操作已被停止。", Qt::gray);
+                    logWidget->appendLog("发送操作模式已被停止。", Qt::gray);
                     return; // 提前退出函数
                 }
                 // 1、开关状态
@@ -392,7 +398,7 @@ void TableEditor::sendTableData(Widget *logWidget) {
                 loop.exec();
 
                 if (logWidget->stopRequested) {
-                    logWidget->appendLog("发送操作已被停止。", Qt::gray);
+                    logWidget->appendLog("发送操作模式已被停止。", Qt::gray);
                     return; // 提前退出函数
                 }
             } catch (const std::runtime_error &e) {
@@ -403,6 +409,7 @@ void TableEditor::sendTableData(Widget *logWidget) {
         }
     }
     logWidget->appendLog("发送模式结束。", Qt::gray);
+    logWidget->stopRequested = true; // 每次模式执行结束时重置
 }
 
 

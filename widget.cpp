@@ -12,7 +12,7 @@ Widget::Widget(QWidget *parent)
     responseTimeoutTimer(new QTimer(this))
 {
     ui->setupUi(this);
-    this->setWindowTitle("升降器控制平台(测试版 V4.0)");
+    this->setWindowTitle("升降器控制平台(测试版 V4.1)");
 
     QStringList serialNamePort;
 
@@ -49,6 +49,14 @@ Widget::Widget(QWidget *parent)
 
 Widget::~Widget()
 {
+    stopRequested = true;   // 停止运行模式
+
+
+
+    if (serialPort->isOpen()) {
+        QThread::msleep(RESPONSETIMEOUTTIMESET);
+        serialPort->close();
+    }
     if (receiverThread->isRunning()) {
         receiverThread->quit();
         receiverThread->wait();
@@ -214,7 +222,7 @@ void Widget::on_openSerialBt_clicked()
             selectSerial = true;
             emit ui->queryCb->clicked();
             selectSerial = false;
-            stopRequested = false;
+            // stopRequested = false;
         }else{
             QMessageBox::critical(this, "错误提示", "串口打开失败！！！\r\n该串口可能被占用\r\n请选择正确的串口");
             appendLog("串口打开失败", Qt::red);
