@@ -6,6 +6,7 @@ Widget::Widget(QWidget *parent)
     , ui(new Ui::Widget),
     serialPort(new QSerialPort(this)),
     receiverThread(new QThread(this)),
+    sendThread(new QThread(this)),
     isReceiving(false),
     heartbeatThread(new QThread(this)),
     heartbeatTimer(new QTimer(this)),
@@ -68,6 +69,11 @@ Widget::~Widget()
         heartbeatThread->quit();
         heartbeatThread->wait();
     }
+    if (sendThread->isRunning()) {
+        sendThread->quit();
+        sendThread->wait();  // 等待线程退出
+        delete sendThread;   // 释放资源
+    }
     // 停止并删除定时器
     heartbeatTimer->stop();
     responseTimeoutTimer->stop();
@@ -78,7 +84,7 @@ Widget::~Widget()
 
 void Widget::appendLog(const QString &text, const QColor &color) {
     // 获取当前时间
-    QString currentTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss");
+    QString currentTime = QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss.zzz");
 
     // 格式化消息，加上时间戳
     QString formattedMessage = QString("[%1] %2").arg(currentTime, text);
@@ -220,6 +226,9 @@ void Widget::on_openSerialBt_clicked()
             // isReceiving = true;
             receiverThread->start();
 
+            // 启动发送线程
+            sendThread->start();
+
             // 恢复心跳检测线程
             heartbeatTimer->start(); // 恢复定时器
             selectSerial = true;
@@ -242,6 +251,11 @@ void Widget::on_openSerialBt_clicked()
         if (heartbeatThread->isRunning()) {
             heartbeatThread->quit();
             heartbeatThread->wait();
+        }
+        if (sendThread->isRunning()) {
+            sendThread->quit();
+            sendThread->wait();  // 等待线程退出
+            delete sendThread;   // 释放资源
         }
         // 停止并删除定时器
         heartbeatTimer->stop();

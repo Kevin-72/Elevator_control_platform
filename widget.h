@@ -134,6 +134,7 @@ private:
     QSerialPort *serialPort;//定义串口指针
 
     QThread *receiverThread;
+    QThread *sendThread; 
     bool isReceiving; // 标记接收状态
 
     QMutex serialMutex;  // 定义串口通信的互斥锁
@@ -150,6 +151,7 @@ private:
     bool serialCount = false;
     bool selectSerial = false;
 
+    QMutex sendMutex;  // 定义串口通信的互斥锁
 };
 
 
