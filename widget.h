@@ -33,6 +33,8 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QIntValidator>
+#include <QDebug>
+#include <QQueue>
 
 
 #include "protocol.h"
@@ -59,6 +61,7 @@ public:
     void appendLog(const QString &text, const QColor &color = Qt::black);
 
     // 添加新的成员函数用于发送串口数据
+    void sendNextCommand();
     void sendSerialData(const QByteArray &data); 
     void sendFrame(const ProtocolFrame& frame);
 
@@ -134,6 +137,7 @@ private:
     QSerialPort *serialPort;//定义串口指针
 
     QThread *receiverThread;
+    QThread *sendThread; 
     bool isReceiving; // 标记接收状态
 
     QMutex serialMutex;  // 定义串口通信的互斥锁
@@ -142,7 +146,7 @@ private:
     QTimer *heartbeatTimer;    // 心跳定时器
     bool waitingForHeartbeat;  // 等待心跳响应标志
 
-    bool waitingForResponse;  // 等待响应标志
+    bool waitingForResponse = false;  // 等待响应标志
     QByteArray lastSentData;  // 记录上次发送的数据
     QTimer *responseTimeoutTimer;  // 响应超时定时器
 
@@ -150,6 +154,11 @@ private:
     bool serialCount = false;
     bool selectSerial = false;
 
+    QMutex sendMutex;  // 定义串口通信的互斥锁
+
+    // 添加队列和控制标志
+    QQueue<QByteArray> commandQueue;
+    bool isSending = false;  // 用来标记当前是否正在发送指令
 };
 
 
