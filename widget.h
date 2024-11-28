@@ -90,7 +90,7 @@ public:
     int maxChannelNumber = 0;
     int channelNumber = 0;
 
-    bool stopRequested = false;
+    bool stopRequested = true;
 
 private slots:
     void on_openSerialBt_clicked();
