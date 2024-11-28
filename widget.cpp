@@ -33,6 +33,8 @@ Widget::Widget(QWidget *parent)
 
     ui->openBt->setText("开关");
 
+    setColor();
+
     // 安装事件过滤器
     ui->mode01Bt->installEventFilter(this);
     ui->mode02Bt->installEventFilter(this);
@@ -251,6 +253,7 @@ void Widget::on_openSerialBt_clicked()
         // 模式复位
         stopRequested = true;
         sendReset();
+        setColor();
 
         serialPort->close();
         if (serialPort->isOpen()) {
