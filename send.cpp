@@ -9,9 +9,9 @@ void Widget::onResponseTimeout() {
     if (waitingForHeartbeat)
     {
         appendLog("Error: 等待心跳超时，禁止操作面板，直至心跳恢复！请检查模组连接是否出现异常。", Qt::red);
-        setEnabledMy(false);    
+        setEnabledMy(false);
     }
-    // responseTimeoutTimer->stop();  // 停止超时定时器
+
     isReceiving = false;  // 重置接收标志
     waitingForHeartbeat = false;
     waitingForResponse = false;  // 重置等待标志
@@ -21,64 +21,111 @@ void Widget::onResponseTimeout() {
     }
 }
 
-// 发送数据时加锁，确保在接收操作时禁止发送
-void Widget::sendSerialData(const QByteArray &data) {
-    if (waitingForResponse) {
-        appendLog("Error: Previous operation still waiting for response.", Qt::red);
-        appendLog("发送数据失败！！", Qt::red);
-        return;
+void Widget::sendNextCommand() {
+    // 如果队列不为空且没有在发送，继续发送下一条指令
+    if (!commandQueue.isEmpty() && !isSending) {
+        QByteArray data = commandQueue.dequeue();  // 获取队列中的指令
+        isSending = true;  // 标记为正在发送
+
+        // 将发送逻辑异步调用到发送线程中
+        QMetaObject::invokeMethod(this, [this, data]() {
+            // 显示发送的帧内容
+            QString logMessage = "Sending Frame: ";
+            for (auto byte : data) {
+                logMessage += QString("%1 ").arg(static_cast<uint8_t>(byte), 2, 16, QChar('0')).toUpper();
+            }
+            appendLog(logMessage);
+
+            // 函数内的发送逻辑
+            auto sendData = [&]() {
+                if (serialPort->isOpen() && serialPort->isWritable()) {
+                    QMutexLocker locker(&serialMutex); // 加锁
+                    serialPort->write(data);
+                    serialPort->waitForBytesWritten();
+                    appendLog("发送数据完成");
+                    waitingForResponse = true; // 设置标志，表示正在等待响应
+                } else {
+                    appendLog("Error: Serial port not open or writable.", Qt::red);
+                    waitingForResponse = false;
+                }
+            };
+
+            // 创建一个标志来跟踪响应是否收到
+            bool responseReceived = false;
+
+            // 尝试最多三次发送数据
+            for (int attempt = 1; attempt <= 3; ++attempt) {
+                if (!waitingForResponse) {
+                    sendData();  // 发送数据
+                    responseTimeoutTimer->start(RESPONSETIMEOUTTIMESET);  // 启动响应超时定时器
+
+                    // 通过一个局部变量来判断响应是否已收到
+                    bool timeoutOccurred = false;
+                    while (waitingForResponse && !timeoutOccurred) {
+                        QCoreApplication::processEvents();  // 处理事件，避免阻塞
+
+                        if (!waitingForResponse && responseTimeoutTimer->isActive()) {  // 如果收到响应
+                            responseReceived = true;
+                            responseTimeoutTimer->stop();  // 停止超时定时器
+                            break;
+                        }
+                        if (!responseTimeoutTimer->isActive()) {
+                            timeoutOccurred = true;
+                            break;
+                        }
+                    }
+
+                    if (responseReceived) {
+                        appendLog("指令收发成功！", Qt::green);
+                        break;  // 如果收到响应，跳出循环
+                    }
+                }
+
+                // 如果已经尝试了三次且仍未收到响应，则退出
+                if (attempt == 3) {
+                    appendLog("Error: 三次发送均未收到响应，跳过此指令.", Qt::red);
+                    waitingForResponse = false;
+                    isSending = false;
+                    return;
+                }
+
+                appendLog(QString("Warning: 第%1次发送未收到响应，重试...").arg(attempt), Qt::red);
+            }
+
+            appendLog("---------------", Qt::lightGray);
+
+            // 发送完当前指令后，继续处理队列中的下一条指令
+            isSending = false;
+            sendNextCommand();  // 继续发送下一条指令
+
+        }, Qt::QueuedConnection); // 使用队列连接，将方法调用放入线程事件循环
     }
-    // 设置标志，表明正在等待响应
-    waitingForResponse = true;
-
-    QMutexLocker locker(&serialMutex); // 加锁
-
-    if (serialPort->isOpen() && serialPort->isWritable()) {
-        serialPort->write(data);
-        serialPort->waitForBytesWritten();
-        appendLog("发送数据完成");
-    } else {
-        appendLog("Error: Serial port not open or writable.", Qt::red);
-        waitingForResponse = false;  // 重置等待标志
-        waitingForHeartbeat = false; // 重置心跳等待
-        return;
-    }
-
-    // 启动响应超时定时器
-    responseTimeoutTimer->start(RESPONSETIMEOUTTIMESET);  // 设置超时为 200 毫秒
-    receiverThread->start();
 }
 
-// 模拟发送协议帧
-void Widget::sendFrame(const ProtocolFrame& frame) {
-    std::vector<uint8_t> serialized = frame.serialize();
-
-    // 将序列化后的数据转换为 QByteArray
-    QByteArray byteArrayData(reinterpret_cast<const char*>(serialized.data()), serialized.size());
-
-    // 显示发送的帧内容
-    QString logMessage = "Sending Frame: ";
-    for (auto byte : serialized) {
-        logMessage += QString("%1 ").arg(byte, 2, 16, QChar('0')).toUpper();  // 将字节格式化为两位十六进制
+// 发送数据时加锁，确保在接收操作时禁止发送
+void Widget::sendSerialData(const QByteArray &data) {
+    // 确保发送线程已经初始化
+    if (!sendThread || !sendThread->isRunning()) {
+        appendLog("Error: Send thread is not running!", Qt::red);
+        return;  // 如果线程未初始化或未运行，则退出
     }
-    appendLog(logMessage);
+
+    // 将指令加入队列
+    commandQueue.enqueue(data);
+
+    // 如果当前没有正在发送的指令，则开始发送
+    if (!isSending) {
+        sendNextCommand();  // 开始发送下一条指令
+    }
+}
+
+// 发送协议帧
+void Widget::sendFrame(const ProtocolFrame& frame) {
+    // 将序列化后的数据转换为 QByteArray
+    QByteArray byteArrayData(reinterpret_cast<const char*>(frame.serialize().data()), frame.serialize().size());
 
     // 调用 sendSerialData 发送数据
     sendSerialData(byteArrayData);
-
-
-    // // 模拟接收下位机响应
-    // std::vector<uint8_t> responseData = {
-    //     0x55, 0xAA, 0x00, 0x03, 0x00, 0x01, 0x00,  // 第一帧
-    //     0x55, 0xAA, 0x00, 0x03, 0x00, 0x02, 0x01,  // 第二帧
-    //     0x55, 0xAA, 0x00, 0x06, 0x00, 0x01, 0x01, 0x01  // 第三帧
-    // };
-    // receiveFrames(responseData);
-//    std::vector<uint8_t> responseData = {
-//        0x55, 0xAA, 0x03, 0x07, 0x00, 0x05, 0x14, 0x01, 0x00, 0x01, 0x00, 0x24,
-//        0x55, 0xAA, 0x03, 0x07, 0x00, 0x05, 0x67, 0x04, 0x00, 0x01, 0x02, 0x7C
-//    };
-//    receiveFrames(responseData);
 }
 
 void Widget::on_upBt_pressed()
@@ -87,7 +134,7 @@ void Widget::on_upBt_pressed()
     std::vector<uint8_t> data = {static_cast<uint8_t>(DevCtrlValue::DevCtrl_UP)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
     appendLog("发送上升指令");
-    sendFrame(dataFrame); 
+    sendFrame(dataFrame);
 }
 
 void Widget::on_downBt_pressed()
@@ -96,7 +143,7 @@ void Widget::on_downBt_pressed()
     std::vector<uint8_t> data = {static_cast<uint8_t>(DevCtrlValue::DevCtrl_DOWN)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
     appendLog("发送下降指令");
-    sendFrame(dataFrame); 
+    sendFrame(dataFrame);
 }
 
 void Widget::on_stopBt_clicked()
@@ -105,7 +152,7 @@ void Widget::on_stopBt_clicked()
     std::vector<uint8_t> data = {static_cast<uint8_t>(DevCtrlValue::DevCtrl_STOP)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
     appendLog("发送停止指令");
-    sendFrame(dataFrame); 
+    sendFrame(dataFrame);
 }
 
 
@@ -236,5 +283,8 @@ void Widget::sendReset()
 
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::ALL_STATUS, allStatusData);
     appendLog("发送所有设备复位指令", Qt::blue);
-    sendFrame(dataFrame); 
+    sendFrame(dataFrame);
+    QEventLoop loop;
+    QTimer::singleShot(RESPONSETIMEOUTTIMESET, &loop, &QEventLoop::quit);
+    loop.exec();
 }

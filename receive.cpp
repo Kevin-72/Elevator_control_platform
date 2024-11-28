@@ -16,7 +16,7 @@ void Widget::readSerialData()
 
     QByteArray receivedData = serialPort->readAll();  // 读取数据
 
-    responseTimeoutTimer->stop();  // 停止超时定时器
+//    responseTimeoutTimer->stop();  // 停止超时定时器
     isReceiving = false;  // 接收完成，重置接收标志
     waitingForHeartbeat = false;
     waitingForResponse = false;  // 重置等待标志
@@ -103,7 +103,7 @@ void Widget::receiveFrames(std::vector<uint8_t>& buffer) {
             appendLog("Error parsing received frame: ", Qt::red);
             break;
         }
-        appendLog("---------------", Qt::lightGray);
+
     }
 }
 

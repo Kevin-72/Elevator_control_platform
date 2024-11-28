@@ -6,13 +6,14 @@ Widget::Widget(QWidget *parent)
     , ui(new Ui::Widget),
     serialPort(new QSerialPort(this)),
     receiverThread(new QThread(this)),
+    sendThread(new QThread(this)),
     isReceiving(false),
     heartbeatThread(new QThread(this)),
     heartbeatTimer(new QTimer(this)),
     responseTimeoutTimer(new QTimer(this))
 {
     ui->setupUi(this);
-    this->setWindowTitle("升降器控制平台(测试版 V4.1)");
+    this->setWindowTitle("升降器控制平台(测试版 V5.0)");
 
     QStringList serialNamePort;
 
@@ -46,15 +47,14 @@ Widget::Widget(QWidget *parent)
 
     ui->maxChannelSetCb->setValidator(new QIntValidator(ui->maxChannelSetCb));
     ui->ChannelSetCb->setValidator(new QIntValidator(ui->ChannelSetCb));
-
 }
 
 Widget::~Widget()
 {
-    stopRequested = true;   // 停止运行模式
-    sendReset();    // 复位
-
-
+    // 模式复位
+    stopRequested = true;
+    sendReset();
+    setColor();
 
     if (serialPort->isOpen()) {
         QThread::msleep(RESPONSETIMEOUTTIMESET);
@@ -67,6 +67,11 @@ Widget::~Widget()
     if (heartbeatThread->isRunning()) {
         heartbeatThread->quit();
         heartbeatThread->wait();
+    }
+    if (sendThread->isRunning()) {
+        sendThread->quit();
+        sendThread->wait();  // 等待线程退出
+        delete sendThread;   // 释放资源
     }
     // 停止并删除定时器
     heartbeatTimer->stop();
@@ -220,6 +225,9 @@ void Widget::on_openSerialBt_clicked()
             // isReceiving = true;
             receiverThread->start();
 
+            // 启动发送线程
+            sendThread->start();
+
             // 恢复心跳检测线程
             heartbeatTimer->start(); // 恢复定时器
             selectSerial = true;
@@ -231,6 +239,11 @@ void Widget::on_openSerialBt_clicked()
             appendLog("串口打开失败", Qt::red);
         }
     }else{
+        // 模式复位
+        stopRequested = true;
+        sendReset();
+        setColor();
+
         ui->openBt->setText("开关");
         selectSerial = false;
         isReceiving = false;
@@ -243,17 +256,16 @@ void Widget::on_openSerialBt_clicked()
             heartbeatThread->quit();
             heartbeatThread->wait();
         }
+        if (sendThread->isRunning()) {
+            sendThread->quit();
+            sendThread->wait();  // 等待线程退出
+        }
         // 停止并删除定时器
         heartbeatTimer->stop();
         responseTimeoutTimer->stop();
 
         waitingForHeartbeat = false;
         waitingForResponse = false;  // 重置等待标志
-
-        // 模式复位
-        stopRequested = true;
-        sendReset();
-        setColor();
 
         serialPort->close();
         if (serialPort->isOpen()) {
