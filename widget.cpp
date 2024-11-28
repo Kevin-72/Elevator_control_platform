@@ -50,6 +50,7 @@ Widget::Widget(QWidget *parent)
 Widget::~Widget()
 {
     stopRequested = true;   // 停止运行模式
+    sendReset();    // 复位
 
 
 
@@ -247,7 +248,9 @@ void Widget::on_openSerialBt_clicked()
         waitingForHeartbeat = false;
         waitingForResponse = false;  // 重置等待标志
 
+        // 模式复位
         stopRequested = true;
+        sendReset();
 
         serialPort->close();
         if (serialPort->isOpen()) {

@@ -206,3 +206,35 @@ void Widget::on_ChannelSetCb_returnPressed()
     ProtocolFrame channelDataFrame = createDeviceControlFrame(DPType::CHANNEL, channelData);
     sendFrame(channelDataFrame);
 }
+
+void Widget::sendReset()
+{
+    std::vector<uint8_t> allStatusData(8);
+
+    // 1、开关状态
+    allStatusData[offset_OFF_ON] = logWidget->switchStatus
+                                        ? static_cast<uint8_t>(SwitchValue::SWITCH_OFF)
+                                        : static_cast<uint8_t>(SwitchValue::SWITCH_ON);
+
+    // 2、通道: A/F0
+    allStatusData[offset_ACCESS_SELECT] = 0x00;
+
+    // 3、最大频道值
+    allStatusData[offset_MAXCHANNEL] = (logWidget->maxChannelNumber >> 8) & 0xFF;  // 高字节
+    allStatusData[offset_MAXCHANNEL + 1] = logWidget->maxChannelNumber & 0xFF;    // 低字节
+
+    // 4、频道值: 99
+    uint16_t valueChannel = 0x63;
+    allStatusData[offset_CHANNEL] = (valueChannel >> 8) & 0xFF;  // 高字节
+    allStatusData[offset_CHANNEL + 1] = valueChannel & 0xFF;     // 低字节
+
+    // 5、设备控制: UP
+    allStatusData[offset_POSITION_CONTROL] = static_cast<uint8_t>(DevCtrlValue::DevCtrl_UP);
+
+    // 6、A/F状态
+    allStatusData[offset_A_F_SELECT] = logWidget->A_F_Flag;
+
+    ProtocolFrame dataFrame = createDeviceControlFrame(DPType::ALL_STATUS, allStatusData);
+    appendLog("发送所有设备复位指令", Qt:blue);
+    sendFrame(dataFrame); 
+}

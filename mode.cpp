@@ -176,6 +176,7 @@ void TableEditor::saveTableData() {
     loop_count = loopEdit->text().toInt();
     out << "LoopCount=" << loop_count << "\n";
 
+    file.flush(); // 确保内容被刷新到磁盘
     file.close();
 }
 
@@ -336,6 +337,7 @@ void TableEditor::sendTableData(Widget *logWidget) {
     for (int loop = 0; loop < loop_count; ++loop) {
         if (logWidget->stopRequested) {
             logWidget->appendLog("发送操作模式已被停止。", Qt::gray);
+            logWidget->sendReset();
             return; // 提前退出函数
         }
         // 遍历每一行
@@ -343,6 +345,7 @@ void TableEditor::sendTableData(Widget *logWidget) {
             try {
                 if (logWidget->stopRequested) {
                     logWidget->appendLog("发送操作模式已被停止。", Qt::gray);
+                    logWidget->sendReset();
                     return; // 提前退出函数
                 }
                 // 1、开关状态
@@ -399,6 +402,7 @@ void TableEditor::sendTableData(Widget *logWidget) {
 
                 if (logWidget->stopRequested) {
                     logWidget->appendLog("发送操作模式已被停止。", Qt::gray);
+                    logWidget->sendReset();
                     return; // 提前退出函数
                 }
             } catch (const std::runtime_error &e) {

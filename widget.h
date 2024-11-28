@@ -83,6 +83,9 @@ public:
     void startHeartbeatThread();
     void sendHeartbeat();
 
+    // 复位
+    void sendReset();
+
 
     uint8_t A_F_Flag = 0x11;
     bool switchStatus = false;
