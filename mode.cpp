@@ -331,8 +331,6 @@ void TableEditor::sendTableData(Widget *logWidget) {
     for (int loop = 0; loop < loop_count; ++loop) {
         if (logWidget->stopRequested) {
             logWidget->appendLog("发送操作模式已被停止。", Qt::gray);
-            logWidget->sendReset();
-            logWidget->setColor();
             return; // 提前退出函数
         }
         // 遍历每一行
@@ -340,8 +338,6 @@ void TableEditor::sendTableData(Widget *logWidget) {
             try {
                 if (logWidget->stopRequested) {
                     logWidget->appendLog("发送操作模式已被停止。", Qt::gray);
-                    logWidget->sendReset();
-                    logWidget->setColor();
                     return; // 提前退出函数
                 }
                 // 1、开关状态
@@ -394,12 +390,11 @@ void TableEditor::sendTableData(Widget *logWidget) {
                 uint32_t delayTime = delayText.toUInt();
                 QEventLoop loop;
                 QTimer::singleShot(delayTime * 1000, &loop, &QEventLoop::quit);
+                connect(logWidget, &Widget::stopLoopSignal, &loop, &QEventLoop::quit);
                 loop.exec();
 
                 if (logWidget->stopRequested) {
                     logWidget->appendLog("发送操作模式已被停止。", Qt::gray);
-                    logWidget->sendReset();
-                    logWidget->setColor();
                     return; // 提前退出函数
                 }
             } catch (const std::runtime_error &e) {
@@ -459,6 +454,9 @@ void Widget::on_mode01Bt_clicked()
     if (ui->mode01Bt->styleSheet().contains("lightgreen")) {
         ui->mode01Bt->setStyleSheet("background-color: lightgray;");
         stopRequested = true;
+        emit stopLoopSignal();
+        setColor();
+        sendReset();
         appendLog("模式1已被主动停止！");
     }
     else {
@@ -484,6 +482,9 @@ void Widget::on_mode02Bt_clicked()
     if (ui->mode02Bt->styleSheet().contains("lightgreen")) {
         ui->mode02Bt->setStyleSheet("background-color: lightgray;");
         stopRequested = true;
+        emit stopLoopSignal();
+        setColor();
+        sendReset();
         appendLog("模式2已被主动停止！");
     }
     else {
@@ -509,6 +510,9 @@ void Widget::on_mode03Bt_clicked()
     if (ui->mode03Bt->styleSheet().contains("lightgreen")) {
         ui->mode03Bt->setStyleSheet("background-color: lightgray;");
         stopRequested = true;
+        emit stopLoopSignal();
+        setColor();
+        sendReset();
         appendLog("模式3已被主动停止！");
     }
     else {
@@ -534,6 +538,9 @@ void Widget::on_mode04Bt_clicked()
     if (ui->mode04Bt->styleSheet().contains("lightgreen")) {
         ui->mode04Bt->setStyleSheet("background-color: lightgray;");
         stopRequested = true;
+        emit stopLoopSignal();
+        setColor();
+        sendReset();
         appendLog("模式4已被主动停止！");
     }
     else {
@@ -559,6 +566,9 @@ void Widget::on_mode05Bt_clicked()
     if (ui->mode05Bt->styleSheet().contains("lightgreen")) {
         ui->mode05Bt->setStyleSheet("background-color: lightgray;");
         stopRequested = true;
+        emit stopLoopSignal();
+        setColor();
+        sendReset();
         appendLog("模式5已被主动停止！");
     }
     else {
@@ -584,6 +594,9 @@ void Widget::on_mode06Bt_clicked()
     if (ui->mode06Bt->styleSheet().contains("lightgreen")) {
         ui->mode06Bt->setStyleSheet("background-color: lightgray;");
         stopRequested = true;
+        emit stopLoopSignal();
+        setColor();
+        sendReset();
         appendLog("模式6已被主动停止！");
     }
     else {

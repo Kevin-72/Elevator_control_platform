@@ -100,6 +100,9 @@ public:
 
     bool stopRequested = true;
 
+signals:
+    void stopLoopSignal();
+
 private slots:
     void on_openSerialBt_clicked();
     void on_btnSerialCheck_clicked();
