@@ -13,7 +13,7 @@ Widget::Widget(QWidget *parent)
     responseTimeoutTimer(new QTimer(this))
 {
     ui->setupUi(this);
-    this->setWindowTitle("升降器控制平台(测试版 V5.0)");
+    this->setWindowTitle("升降器控制平台(测试版 V5.1)");
 
     QStringList serialNamePort;
 
@@ -53,8 +53,13 @@ Widget::~Widget()
 {
     // 模式复位
     stopRequested = true;
-    sendReset();
+    emit stopLoopSignal();
     setColor();
+    sendReset();
+    
+    QEventLoop loop;
+    QTimer::singleShot(RESPONSETIMEOUTTIMESET * 3, &loop, &QEventLoop::quit);
+    loop.exec();
 
     if (serialPort->isOpen()) {
         QThread::msleep(RESPONSETIMEOUTTIMESET);
@@ -63,10 +68,12 @@ Widget::~Widget()
     if (receiverThread->isRunning()) {
         receiverThread->quit();
         receiverThread->wait();
+        delete receiverThread;
     }
     if (heartbeatThread->isRunning()) {
         heartbeatThread->quit();
         heartbeatThread->wait();
+        delete heartbeatThread;
     }
     if (sendThread->isRunning()) {
         sendThread->quit();
@@ -241,8 +248,9 @@ void Widget::on_openSerialBt_clicked()
     }else{
         // 模式复位
         stopRequested = true;
-        sendReset();
+        emit stopLoopSignal();
         setColor();
+        sendReset();
 
         ui->openBt->setText("开关");
         selectSerial = false;

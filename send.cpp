@@ -285,6 +285,6 @@ void Widget::sendReset()
     appendLog("发送所有设备复位指令", Qt::blue);
     sendFrame(dataFrame);
     QEventLoop loop;
-    QTimer::singleShot(RESPONSETIMEOUTTIMESET, &loop, &QEventLoop::quit);
+    QTimer::singleShot(RESPONSETIMEOUTTIMESET * 3, &loop, &QEventLoop::quit);
     loop.exec();
 }
