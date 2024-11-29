@@ -380,9 +380,8 @@ void TableEditor::sendTableData(Widget *logWidget) {
                 allStatusData[offset_A_F_SELECT] = logWidget->A_F_Flag;
 
                 // 发送 allStatus
-                logWidget->appendLog(QString("发送 allStatus: Row %1").arg(row));
                 ProtocolFrame allStatusDataFrame = createDeviceControlFrame(DPType::ALL_STATUS, allStatusData);
-                logWidget->sendFrame(allStatusDataFrame);
+                logWidget->sendFrame(allStatusDataFrame, QString("发送 allStatus: Row %1").arg(row));
 
                 // 延时（非阻塞）
                 QString delayText = tableWidget->item(row, 3)->text();

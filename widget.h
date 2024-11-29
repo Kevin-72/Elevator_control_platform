@@ -62,8 +62,8 @@ public:
 
     // 添加新的成员函数用于发送串口数据
     void sendNextCommand();
-    void sendSerialData(const QByteArray &data); 
-    void sendFrame(const ProtocolFrame& frame);
+    void sendSerialData(const QByteArray &data, const QString &str_log); 
+    void sendFrame(const ProtocolFrame& frame, const QString &str_log);
 
     // 添加新的成员函数用于读取串口数据
     void readSerialData();  
@@ -160,7 +160,7 @@ private:
     QMutex sendMutex;  // 定义串口通信的互斥锁
 
     // 添加队列和控制标志
-    QQueue<QByteArray> commandQueue;
+    QQueue<QPair<QByteArray, QString>> commandQueue;
     bool isSending = false;  // 用来标记当前是否正在发送指令
 };
 

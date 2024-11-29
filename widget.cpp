@@ -13,7 +13,7 @@ Widget::Widget(QWidget *parent)
     responseTimeoutTimer(new QTimer(this))
 {
     ui->setupUi(this);
-    this->setWindowTitle("升降器控制平台(测试版 V5.1)");
+    this->setWindowTitle("升降器控制平台(测试版 V5.2)");
 
     QStringList serialNamePort;
 
@@ -202,8 +202,7 @@ void Widget::sendHeartbeat()
 {
     ProtocolFrame frame = createHeartbeatFrame();  // 创建心跳帧
     waitingForHeartbeat = true;
-    appendLog("发送心跳帧");
-    sendFrame(frame);  // 发送心跳帧
+    sendFrame(frame, "发送心跳帧");  // 发送心跳帧
 }
 
 

@@ -4,17 +4,16 @@
 // 响应等待超时处理槽函数
 void Widget::onResponseTimeout() {
     if (waitingForResponse) {
+        waitingForResponse = false;  // 重置等待标志
+        isReceiving = false;  // 重置接收标志
         appendLog("Error: Response timeout.", Qt::red);
     }
     if (waitingForHeartbeat)
     {
         appendLog("Error: 等待心跳超时，禁止操作面板，直至心跳恢复！请检查模组连接是否出现异常。", Qt::red);
         setEnabledMy(false);
+        waitingForHeartbeat = false;
     }
-
-    isReceiving = false;  // 重置接收标志
-    waitingForHeartbeat = false;
-    waitingForResponse = false;  // 重置等待标志
     if (selectSerial) {
         emit ui->openSerialBt->clicked();
         QMessageBox::critical(this, "错误提示", "串口选择错误！\r\n请选择正确的串口");
@@ -24,12 +23,20 @@ void Widget::onResponseTimeout() {
 void Widget::sendNextCommand() {
     // 如果队列不为空且没有在发送，继续发送下一条指令
     if (!commandQueue.isEmpty() && !isSending) {
-        QByteArray data = commandQueue.dequeue();  // 获取队列中的指令
+        auto command = commandQueue.dequeue();  // 获取队列中的指令（data 和 log）
+        QByteArray data = command.first;
+        QString str_log = command.second;
         isSending = true;  // 标记为正在发送
 
         // 将发送逻辑异步调用到发送线程中
-        QMetaObject::invokeMethod(this, [this, data]() {
+        QMetaObject::invokeMethod(this, [this, data, str_log]() {
             // 显示发送的帧内容
+            if (stopRequested) {
+                appendLog(QString("%1 开始......").arg(str_log), Qt::blue);
+            }
+            else {
+                appendLog(QString("%1 开始......").arg(str_log));
+            }
             QString logMessage = "Sending Frame: ";
             for (auto byte : data) {
                 logMessage += QString("%1 ").arg(static_cast<uint8_t>(byte), 2, 16, QChar('0')).toUpper();
@@ -76,7 +83,7 @@ void Widget::sendNextCommand() {
                     }
 
                     if (responseReceived) {
-                        appendLog("指令收发成功！", Qt::green);
+                        appendLog(QString("%1 成功！").arg(str_log), Qt::green);
                         break;  // 如果收到响应，跳出循环
                     }
                 }
@@ -84,6 +91,7 @@ void Widget::sendNextCommand() {
                 // 如果已经尝试了三次且仍未收到响应，则退出
                 if (attempt == 3) {
                     appendLog("Error: 三次发送均未收到响应，跳过此指令.", Qt::red);
+                    appendLog(QString("%1 超时！").arg(str_log), Qt::red);
                     waitingForResponse = false;
                     isSending = false;
                     return;
@@ -103,7 +111,7 @@ void Widget::sendNextCommand() {
 }
 
 // 发送数据时加锁，确保在接收操作时禁止发送
-void Widget::sendSerialData(const QByteArray &data) {
+void Widget::sendSerialData(const QByteArray &data, const QString &str_log) {
     // 确保发送线程已经初始化
     if (!sendThread || !sendThread->isRunning()) {
         appendLog("Error: Send thread is not running!", Qt::red);
@@ -111,7 +119,7 @@ void Widget::sendSerialData(const QByteArray &data) {
     }
 
     // 将指令加入队列
-    commandQueue.enqueue(data);
+    commandQueue.enqueue(qMakePair(data, str_log)); 
 
     // 如果当前没有正在发送的指令，则开始发送
     if (!isSending) {
@@ -120,12 +128,12 @@ void Widget::sendSerialData(const QByteArray &data) {
 }
 
 // 发送协议帧
-void Widget::sendFrame(const ProtocolFrame& frame) {
+void Widget::sendFrame(const ProtocolFrame& frame, const QString &str_log) {
     // 将序列化后的数据转换为 QByteArray
     QByteArray byteArrayData(reinterpret_cast<const char*>(frame.serialize().data()), frame.serialize().size());
 
     // 调用 sendSerialData 发送数据
-    sendSerialData(byteArrayData);
+    sendSerialData(byteArrayData, str_log);
 }
 
 void Widget::on_upBt_pressed()
@@ -133,8 +141,7 @@ void Widget::on_upBt_pressed()
     // serialPort->write("CMD=UP\r\n");
     std::vector<uint8_t> data = {static_cast<uint8_t>(DevCtrlValue::DevCtrl_UP)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
-    appendLog("发送上升指令");
-    sendFrame(dataFrame);
+    sendFrame(dataFrame, "发送上升指令");
 }
 
 void Widget::on_downBt_pressed()
@@ -142,8 +149,7 @@ void Widget::on_downBt_pressed()
     // serialPort->write("CMD=DOWN\r\n");
     std::vector<uint8_t> data = {static_cast<uint8_t>(DevCtrlValue::DevCtrl_DOWN)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
-    appendLog("发送下降指令");
-    sendFrame(dataFrame);
+    sendFrame(dataFrame, "发送下降指令");
 }
 
 void Widget::on_stopBt_clicked()
@@ -151,8 +157,7 @@ void Widget::on_stopBt_clicked()
     // serialPort->write("CMD=STOP\r\n");
     std::vector<uint8_t> data = {static_cast<uint8_t>(DevCtrlValue::DevCtrl_STOP)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
-    appendLog("发送停止指令");
-    sendFrame(dataFrame);
+    sendFrame(dataFrame, "发送停止指令");
 }
 
 
@@ -163,15 +168,14 @@ void Widget::on_openBt_clicked()
     if (switchStatus) {
         std::vector<uint8_t> data = {static_cast<uint8_t>(SwitchValue::SWITCH_ON)};
         ProtocolFrame dataFrame = createDeviceControlFrame(DPType::OFF_ON, data);
-        appendLog("发送open");
-        sendFrame(dataFrame);
+        sendFrame(dataFrame, "发送open");
         ui->openBt->setText("关闭");
     }
     else {
         std::vector<uint8_t> data = {static_cast<uint8_t>(SwitchValue::SWITCH_OFF)};
         ProtocolFrame dataFrame = createDeviceControlFrame(DPType::OFF_ON, data);
         appendLog("发送close");
-        sendFrame(dataFrame);
+        sendFrame(dataFrame, "发送close");
         ui->openBt->setText("开启");
     }
 
@@ -180,8 +184,7 @@ void Widget::on_openBt_clicked()
 void Widget::on_queryCb_clicked()
 {
     ProtocolFrame queryStatusFrame = createQueryStatusFrame();
-    appendLog("查询状态");
-    sendFrame(queryStatusFrame);
+    sendFrame(queryStatusFrame, "查询状态");
 }
 
 
@@ -200,8 +203,7 @@ void Widget::on_channelsCb_currentIndexChanged(const QString &arg1)
             return; // 或者执行其他错误处理逻辑
         }
         ProtocolFrame accessDataFrame = createDeviceControlFrame(DPType::ACCESS_SELECT, accessData);
-        appendLog("发送通道值");
-        sendFrame(accessDataFrame);
+        sendFrame(accessDataFrame, "发送通道值");
     }
 
 }
@@ -224,10 +226,9 @@ void Widget::on_maxChannelSetCb_returnPressed()
     }
 
      // 发送最大频道值
-    appendLog("发送最大频道值");
     ui->maxChannelSetCb->clear();
     ProtocolFrame maxChannelDataFrame = createDeviceControlFrame(DPType::MAXCHANNEL, maxChannelData);
-    sendFrame(maxChannelDataFrame);
+    sendFrame(maxChannelDataFrame, "发送最大频道值");
 }
 
 
@@ -248,10 +249,9 @@ void Widget::on_ChannelSetCb_returnPressed()
     }
 
     // 发送频道值
-    appendLog("发送频道值");
     ui->ChannelSetCb->clear();
     ProtocolFrame channelDataFrame = createDeviceControlFrame(DPType::CHANNEL, channelData);
-    sendFrame(channelDataFrame);
+    sendFrame(channelDataFrame, "发送频道值");
 }
 
 void Widget::sendReset()
@@ -282,8 +282,7 @@ void Widget::sendReset()
     allStatusData[offset_A_F_SELECT] = A_F_Flag;
 
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::ALL_STATUS, allStatusData);
-    appendLog("发送所有设备复位指令", Qt::blue);
-    sendFrame(dataFrame);
+    sendFrame(dataFrame, "发送所有设备复位指令");
     QEventLoop loop;
     QTimer::singleShot(RESPONSETIMEOUTTIMESET * 3, &loop, &QEventLoop::quit);
     loop.exec();
