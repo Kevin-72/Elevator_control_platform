@@ -35,6 +35,7 @@
 #include <QIntValidator>
 #include <QDebug>
 #include <QQueue>
+#include <QDir>
 
 
 #include "protocol.h"
@@ -90,6 +91,8 @@ public:
     void sendReset();
 
     void setColor(QPushButton *modeBt=nullptr);
+
+    void setBottonImage(QPushButton* width, QString imagePath);
 
 
     uint8_t A_F_Flag = 0x11;

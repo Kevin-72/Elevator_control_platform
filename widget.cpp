@@ -13,7 +13,7 @@ Widget::Widget(QWidget *parent)
     responseTimeoutTimer(new QTimer(this))
 {
     ui->setupUi(this);
-    this->setWindowTitle("升降器控制平台(测试版 V5.2)");
+    this->setWindowTitle("升降器控制平台(测试版 V6.0)");
 
     QStringList serialNamePort;
 
@@ -32,7 +32,11 @@ Widget::Widget(QWidget *parent)
     // 启动心跳检测线程
     startHeartbeatThread();
 
-    ui->openBt->setText("开关");
+    // ui->openBt->setText("开关");
+    setBottonImage(ui->openBt, ":/icons/power_black.png");
+    setBottonImage(ui->upBt, ":/icons/up.png");
+    setBottonImage(ui->downBt, ":/icons/down.png");
+    setBottonImage(ui->stopBt, ":/icons/stop.png");
 
     setColor();
 
@@ -108,7 +112,25 @@ void Widget::appendLog(const QString &text, const QColor &color) {
     ui->logViewer->moveCursor(QTextCursor::End);
 }
 
+void Widget::setBottonImage(QPushButton* button, QString imagePath) {
+    if (!QFile::exists(imagePath)) {
+        QMessageBox::critical(this, "错误提示", "图片路径不存在！！！");
+    }
 
+    button->setStyleSheet(
+        QString(
+            "QPushButton {"
+            "    border-radius: %1px;"  // 设置圆形
+            "    border: none;"         // 无边框
+            "    background: none;"     // 无默认背景
+            "    background-image: url(%2);"  // 设置动态图片
+            "    background-position: center;"  // 图片居中
+            "    background-repeat: no-repeat;" // 不重复
+//            "    background-size: cover;"      // 图片完全覆盖
+            "}"
+        ).arg(button->width() / 2).arg(imagePath)
+    );
+}
 
 void Widget::scan_serial()
 {
@@ -251,7 +273,8 @@ void Widget::on_openSerialBt_clicked()
         setColor();
         sendReset();
 
-        ui->openBt->setText("开关");
+        // ui->openBt->setText("开关");
+        setBottonImage(ui->openBt, ":/icons/power_black.png");
         selectSerial = false;
         isReceiving = false;
         // 停止接收线程

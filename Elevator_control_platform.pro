@@ -23,7 +23,7 @@ HEADERS += \
 FORMS += \
     widget.ui
 
-RC_ICONS = Elevator.ico
+RC_ICONS = icons/Elevator.ico
 
 TRANSLATIONS += \
     Elevator_control_platform_zh_CN.ts
@@ -34,3 +34,15 @@ CONFIG += embed_translations
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
+
+DISTFILES += \
+    icons/Elevator.ico \
+    icons/down.png \
+    icons/power_black.png \
+    icons/power_green.png \
+    icons/power_red.png \
+    icons/stop.png \
+    icons/up.png
+
+RESOURCES += \
+    resource.qrc

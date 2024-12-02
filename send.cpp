@@ -138,7 +138,8 @@ void Widget::sendFrame(const ProtocolFrame& frame, const QString &str_log) {
 
 void Widget::on_upBt_pressed()
 {
-    // serialPort->write("CMD=UP\r\n");
+    setBottonImage(ui->upBt, ":/icons/up.png");
+
     std::vector<uint8_t> data = {static_cast<uint8_t>(DevCtrlValue::DevCtrl_UP)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
     sendFrame(dataFrame, "发送上升指令");
@@ -146,7 +147,8 @@ void Widget::on_upBt_pressed()
 
 void Widget::on_downBt_pressed()
 {
-    // serialPort->write("CMD=DOWN\r\n");
+    setBottonImage(ui->downBt, ":/icons/down.png");
+
     std::vector<uint8_t> data = {static_cast<uint8_t>(DevCtrlValue::DevCtrl_DOWN)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
     sendFrame(dataFrame, "发送下降指令");
@@ -154,13 +156,12 @@ void Widget::on_downBt_pressed()
 
 void Widget::on_stopBt_clicked()
 {
-    // serialPort->write("CMD=STOP\r\n");
+    setBottonImage(ui->stopBt, ":/icons/stop.png");
+
     std::vector<uint8_t> data = {static_cast<uint8_t>(DevCtrlValue::DevCtrl_STOP)};
     ProtocolFrame dataFrame = createDeviceControlFrame(DPType::POSITION_CONTROL, data);
     sendFrame(dataFrame, "发送停止指令");
 }
-
-
 
 
 void Widget::on_openBt_clicked()
@@ -169,14 +170,16 @@ void Widget::on_openBt_clicked()
         std::vector<uint8_t> data = {static_cast<uint8_t>(SwitchValue::SWITCH_ON)};
         ProtocolFrame dataFrame = createDeviceControlFrame(DPType::OFF_ON, data);
         sendFrame(dataFrame, "发送open");
-        ui->openBt->setText("关闭");
+        // ui->openBt->setText("关闭");
+        setBottonImage(ui->openBt, ":/icons/power_green.png");
     }
     else {
         std::vector<uint8_t> data = {static_cast<uint8_t>(SwitchValue::SWITCH_OFF)};
         ProtocolFrame dataFrame = createDeviceControlFrame(DPType::OFF_ON, data);
         appendLog("发送close");
         sendFrame(dataFrame, "发送close");
-        ui->openBt->setText("开启");
+        // ui->openBt->setText("开启");
+        setBottonImage(ui->openBt, ":/icons/power_red.png");
     }
 
 }

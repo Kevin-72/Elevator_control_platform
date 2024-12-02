@@ -114,13 +114,17 @@ void Widget::heartbeatHandle(std::vector<uint8_t>& data)
         return;
     }
 
-//    if (data[0] == 0x00) {
-//        appendLog("接收到首次心跳响应");
-//    } else if (data[0] == 0x01) {
-//        appendLog("接收到正常心跳响应");
-//    } else {
-//        appendLog("接收的心跳数据错误");
-//    }
+    if (data[0] == 0x00) {
+        appendLog("接收到首次心跳响应");
+    }
+
+    // if (data[0] == 0x00) {
+    //     appendLog("接收到首次心跳响应");
+    // } else if (data[0] == 0x01) {
+    //     appendLog("接收到正常心跳响应");
+    // } else {
+    //     appendLog("接收的心跳数据错误");
+    // }
 
     // 心跳响应正常时恢复操作
     setEnabledMy(true); 
@@ -210,11 +214,13 @@ void Widget::handle_OFF_ON(uint8_t func_val)
     auto it = SwitchValueMap.find(static_cast<SwitchValue>(func_val));
     ui->label_switch_value->setText(it != SwitchValueMap.end() ? it->second : "Unknown");
     if (static_cast<SwitchValue>(func_val) == SwitchValue::SWITCH_OFF) {
-        ui->openBt->setText("开启");
+        setBottonImage(ui->openBt, ":/icons/power_red.png");
+        // ui->openBt->setText("开启");
         switchStatus = true;
     }
     else {
-        ui->openBt->setText("关闭");
+        setBottonImage(ui->openBt, ":/icons/power_green.png");
+        // ui->openBt->setText("关闭");
         switchStatus = false;
     }
 
