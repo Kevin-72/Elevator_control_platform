@@ -1,0 +1,12 @@
+<!DOCTYPE RCC>
+<RCC version="1.0">
+    <qresource>
+        <file>icons/power_black.png</file>
+	<file>icons/power_green.png</file>
+	<file>icons/power_red.png</file>
+	<file>icons/down.png</file>
+	<file>icons/up.png</file>
+	<file>icons/stop.png</file>
+	<file>icons/Elevator.ico</file>
+    </qresource>
+</RCC>
