@@ -15,6 +15,10 @@ Widget::Widget(QWidget *parent)
     ui->setupUi(this);
     this->setWindowTitle("升降器控制平台(测试版 V6.0)");
 
+    // 设置窗口标志，禁用最大化按钮和调整大小功能
+    this->setWindowFlags(this->windowFlags() & ~Qt::WindowMaximizeButtonHint);
+    this->setFixedSize(this->size()); // 固定当前窗口大小
+
     QStringList serialNamePort;
 
     // 获取并遍历所有可用的串口
